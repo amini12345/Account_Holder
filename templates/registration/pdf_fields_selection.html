@@ -1,0 +1,293 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   انتخاب فیلدهای خروجی PDF
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-file-pdf"></i> انتخاب فیلدهای خروجی PDF
+          </h3>
+          <div class="card-tools">
+            <a href="{% url 'account:home' %}" class="btn btn-secondary btn-sm">
+              <i class="fas fa-arrow-left"></i> بازگشت
+            </a>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- راهنمای استفاده -->
+          <div class="alert alert-info">
+            <h5><i class="icon fas fa-info"></i> راهنمای استفاده</h5>
+            <p class="mb-0">
+              فیلدهای مورد نظر خود را برای خروجی PDF انتخاب کنید. فیلدهای انتخاب شده به ترتیب انتخاب در فایل PDF نمایش داده خواهند شد.
+              
+            </p>
+          </div>
+
+          <form method="post" action="{% url 'account:generate_pdf' %}" id="pdfFieldsForm">
+            {% csrf_token %}
+            
+            <!-- فیلدهای مخفی برای حفظ فیلترها -->
+            <input type="hidden" name="search" value="{{ search_query }}">
+            <input type="hidden" name="brand_search" value="{{ brand_search }}">
+            <input type="hidden" name="serial_search" value="{{ serial_search }}">
+            <input type="hidden" name="code_search" value="{{ code_search }}">
+            <input type="hidden" name="holder_search" value="{{ holder_search }}">
+            <input type="hidden" name="type_filter" value="{{ type_filter }}">
+            <input type="hidden" name="status_filter" value="{{ status_filter }}">
+            <input type="hidden" name="sub_status_filter" value="{{ sub_status_filter }}">
+            
+            <!-- انتخاب فیلدها -->
+            <div class="row">
+              <div class="col-md-6">
+                <div class="card card-outline card-primary">
+                  <div class="card-header">
+                    <h5 class="card-title">
+                      <i class="fas fa-list"></i> فیلدهای اصلی
+                    </h5>
+                    <div class="card-tools">
+                      <button type="button" class="btn btn-tool" onclick="selectAllMain()">
+                        <i class="fas fa-check-square"></i> انتخاب همه
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input main-field" id="row_number" name="selected_fields" value="row_number" checked>
+                        <label class="custom-control-label" for="row_number">ردیف</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input main-field" id="name" name="selected_fields" value="name" checked>
+                        <label class="custom-control-label" for="name">نام کالا</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input main-field" id="type" name="selected_fields" value="type" checked>
+                        <label class="custom-control-label" for="type">نوع کالا</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input main-field" id="brand" name="selected_fields" value="brand">
+                        <label class="custom-control-label" for="brand">برند</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input main-field" id="status" name="selected_fields" value="status" checked>
+                        <label class="custom-control-label" for="status">وضعیت کالا</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input main-field" id="sub_status" name="selected_fields" value="sub_status">
+                        <label class="custom-control-label" for="sub_status">زیر وضعیت</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="card card-outline card-info">
+                  <div class="card-header">
+                    <h5 class="card-title">
+                      <i class="fas fa-info-circle"></i> فیلدهای اضافی
+                    </h5>
+                    <div class="card-tools">
+                      <button type="button" class="btn btn-tool" onclick="selectAllExtra()">
+                        <i class="fas fa-check-square"></i> انتخاب همه
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input extra-field" id="serial" name="selected_fields" value="serial" checked>
+                        <label class="custom-control-label" for="serial">شماره سریال</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input extra-field" id="product_code" name="selected_fields" value="product_code" checked>
+                        <label class="custom-control-label" for="product_code">کد محصول</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input extra-field" id="holder" name="selected_fields" value="holder" checked>
+                        <label class="custom-control-label" for="holder">دارنده حساب</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input extra-field" id="configuration" name="selected_fields" value="configuration">
+                        <label class="custom-control-label" for="configuration">پیکربندی</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input extra-field" id="register_date" name="selected_fields" value="register_date">
+                        <label class="custom-control-label" for="register_date">تاریخ ثبت</label>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input extra-field" id="update_date" name="selected_fields" value="update_date">
+                        <label class="custom-control-label" for="update_date">تاریخ بروزرسانی</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- نمایش فیلترهای اعمال شده -->
+            {% if search_query or brand_search or serial_search or code_search or holder_search or type_filter or status_filter or sub_status_filter %}
+              <div class="alert alert-warning">
+                <h6><i class="fas fa-filter"></i> فیلترهای اعمال شده:</h6>
+                <ul class="mb-0">
+                  {% if search_query %}
+                    <li><strong>نام کالا:</strong> {{ search_query }}</li>
+                  {% endif %}
+                  {% if brand_search %}
+                    <li><strong>برند:</strong> {{ brand_search }}</li>
+                  {% endif %}
+                  {% if serial_search %}
+                    <li><strong>شماره سریال:</strong> {{ serial_search }}</li>
+                  {% endif %}
+                  {% if code_search %}
+                    <li><strong>کد محصول:</strong> {{ code_search }}</li>
+                  {% endif %}
+                  {% if holder_search %}
+                    <li><strong>دارنده حساب:</strong> {{ holder_search }}</li>
+                  {% endif %}
+                  {% if type_filter %}
+                    <li><strong>نوع کالا:</strong> {% if type_filter == 'Technical' %}فنی{% else %}غیر فنی{% endif %}</li>
+                  {% endif %}
+                  {% if status_filter %}
+                    <li><strong>وضعیت:</strong> 
+                      {% if status_filter == 'hardware' %}سخت افزار (تعمیری)
+                      {% elif status_filter == 'Delivery' %}تحویل
+                      {% elif status_filter == 'warehouse' %}انبار
+                      {% else %}{{ status_filter }}{% endif %}
+                    </li>
+                  {% endif %}
+                  {% if sub_status_filter %}
+                    <li><strong>زیر وضعیت:</strong> {{ sub_status_filter }}</li>
+                  {% endif %}
+                </ul>
+              </div>
+            {% endif %}
+
+            <!-- دکمه‌های عملیات -->
+            <div class="row">
+              <div class="col-12">
+                <div class="card card-outline card-success">
+                  <div class="card-body text-center">
+                    <div class="btn-group" role="group">
+                      <button type="button" class="btn btn-secondary" onclick="selectAll()">
+                        <i class="fas fa-check-square"></i> انتخاب همه فیلدها
+                      </button>
+                      <button type="button" class="btn btn-warning" onclick="deselectAll()">
+                        <i class="fas fa-square"></i> لغو انتخاب همه
+                      </button>
+                    </div>
+                    <br><br>
+                    <div class="btn-group" role="group">
+                      <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-file-pdf"></i> تولید فایل PDF
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function selectAllMain() {
+      document.querySelectorAll('.main-field').forEach(function(checkbox) {
+        checkbox.checked = true;
+      });
+    }
+
+    function selectAllExtra() {
+      document.querySelectorAll('.extra-field').forEach(function(checkbox) {
+        checkbox.checked = true;
+      });
+    }
+
+    function selectAll() {
+      document.querySelectorAll('input[name="selected_fields"]').forEach(function(checkbox) {
+        checkbox.checked = true;
+      });
+    }
+
+    function deselectAll() {
+      document.querySelectorAll('input[name="selected_fields"]').forEach(function(checkbox) {
+        checkbox.checked = false;
+      });
+    }
+
+    // تأیید قبل از ارسال فرم
+    document.getElementById('pdfFieldsForm').addEventListener('submit', function(e) {
+      const selectedFields = document.querySelectorAll('input[name="selected_fields"]:checked');
+      if (selectedFields.length === 0) {
+        e.preventDefault();
+        alert('لطفاً حداقل یک فیلد را انتخاب کنید.');
+        return false;
+      }
+      
+      if (selectedFields.length > 10) {
+        if (!confirm('تعداد فیلدهای انتخاب شده زیاد است و ممکن است نمایش PDF مناسب نباشد. آیا ادامه می‌دهید؟')) {
+          e.preventDefault();
+          return false;
+        }
+      }
+    });
+
+    // شمارش فیلدهای انتخاب شده
+    function updateSelectedCount() {
+      const selectedCount = document.querySelectorAll('input[name="selected_fields"]:checked').length;
+      const countElement = document.getElementById('selectedCount');
+      if (countElement) {
+        countElement.textContent = selectedCount;
+      }
+    }
+
+    // اضافه کردن event listener برای تمام checkbox ها
+    document.querySelectorAll('input[name="selected_fields"]').forEach(function(checkbox) {
+      checkbox.addEventListener('change', updateSelectedCount);
+    });
+
+    // اجرای اولیه
+    updateSelectedCount();
+  </script>
+{% endblock %}

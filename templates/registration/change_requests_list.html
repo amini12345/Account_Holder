@@ -1,0 +1,269 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   درخواست‌های تغییر کالا
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.status-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.status-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-approved {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-rejected {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+}
+
+.filter-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.changes-preview {
+    font-size: 0.85rem;
+    color: #6c757d;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+</style>
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-exchange-alt mr-2"></i>
+            درخواست‌های تغییر کالا
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="info-box bg-info">
+                <span class="info-box-icon"><i class="fas fa-list"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">کل درخواست‌ها</span>
+                  <span class="info-box-number">{{ total_requests }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="info-box bg-warning">
+                <span class="info-box-icon"><i class="fas fa-clock"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">در انتظار</span>
+                  <span class="info-box-number">{{ pending_requests }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="info-box bg-success">
+                <span class="info-box-icon"><i class="fas fa-check"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">تایید شده</span>
+                  <span class="info-box-number">{{ approved_requests }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="info-box bg-danger">
+                <span class="info-box-icon"><i class="fas fa-times"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">رد شده</span>
+                  <span class="info-box-number">{{ rejected_requests }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- فیلترها -->
+  <div class="filter-card">
+    <form method="get" class="row">
+      <div class="col-md-3">
+        <label for="status" class="form-label">وضعیت:</label>
+        <select name="status" id="status" class="form-control">
+          <option value="">همه</option>
+          <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>در انتظار</option>
+          <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>تایید شده</option>
+          <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>رد شده</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="action" class="form-label">نوع تغییر:</label>
+        <select name="action" id="action" class="form-control">
+          <option value="">همه</option>
+          <option value="edit" {% if action_filter == 'edit' %}selected{% endif %}>ویرایش</option>
+          <option value="transfer" {% if action_filter == 'transfer' %}selected{% endif %}>انتقال</option>
+          <option value="delete" {% if action_filter == 'delete' %}selected{% endif %}>حذف</option>
+          <option value="status_change" {% if action_filter == 'status_change' %}selected{% endif %}>تغییر وضعیت</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="search" class="form-label">جستجو:</label>
+        <input type="text" name="search" id="search" class="form-control" 
+               value="{{ search_query }}" placeholder="نام کالا، مالک، یا مدیر...">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary mr-2">
+          <i class="fas fa-search"></i> جستجو
+        </button>
+        <a href="{% url 'account:change_requests_list' %}" class="btn btn-secondary">
+          <i class="fas fa-undo"></i> پاک
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- جدول درخواست‌ها -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="fas fa-table mr-2"></i>
+        لیست درخواست‌ها
+      </h3>
+    </div>
+    <div class="card-body">
+      {% if requests %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>کالا</th>
+              <th>مالک</th>
+              <th>مدیر درخواست‌دهنده</th>
+              <th>نوع تغییر</th>
+              <th>وضعیت</th>
+              <th>تغییرات</th>
+              <th>تاریخ ایجاد</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for request in requests %}
+            <tr>
+              <td>
+                <strong>{{ request.item.Technical_items|default:"بدون نام" }}</strong><br>
+                <small class="text-muted">{{ request.item.serial_number|default:"بدون سریال" }}</small>
+              </td>
+              <td>
+                {{ request.owner.name }} {{ request.owner.family }}<br>
+                <small class="text-muted">{{ request.owner.Personnel_number }}</small>
+              </td>
+              <td>{{ request.admin_user }}</td>
+              <td>
+                <span class="badge action-badge badge-info">
+                  {{ request.get_action_type_display }}
+                </span>
+              </td>
+              <td>
+                <span class="badge status-badge status-{{ request.status }}">
+                  {{ request.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <div class="changes-preview" title="{{ request.description }}">
+                  {% if request.proposed_changes %}
+                    {% for field, change in request.proposed_changes.items %}
+                      <small>{{ field }}: {{ change.old|default:"---" }} → {{ change.new|default:"---" }}</small><br>
+                    {% endfor %}
+                  {% else %}
+                    {{ request.description|truncatechars:50 }}
+                  {% endif %}
+                </div>
+              </td>
+              <td>{{ request.jinfo }}</td>
+              <td>
+                <div class="btn-group" role="group">
+                  <a href="{% url 'account:change_request_detail' request.pk %}" 
+                     class="btn btn-sm btn-info" title="جزئیات">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  {% if request.status == 'pending' %}
+                  <form method="post" action="{% url 'account:approve_change_request_admin' request.id %}" 
+                        class="d-inline" onsubmit="return confirm('آیا از تایید اجباری این درخواست اطمینان دارید؟')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success" title="تایید اجباری">
+                      <i class="fas fa-check"></i>
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'account:reject_change_request_admin' request.id %}" 
+                        class="d-inline" onsubmit="return confirm('آیا از رد این درخواست اطمینان دارید؟')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger" title="رد درخواست">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-4">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <p class="text-muted">هیچ درخواست تغییری یافت نشد.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-submit form on filter change
+    $('#status, #action').change(function() {
+        $(this).closest('form').submit();
+    });
+    
+    // Tooltip for changes preview
+    $('[title]').tooltip();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,354 @@
+{% extends 'registration/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin: 20px 0;
+    }
+    
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #28a745;
+    }
+    
+    .form-header h2 {
+        color: #28a745;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40,167,69,.25);
+    }
+    
+    .btn-success {
+        background: linear-gradient(45deg, #28a745, #1e7e34);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40,167,69,0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+    
+    .required {
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 5px 0 0 0;
+    }
+    
+    .errorlist li {
+        color: #dc3545;
+        font-size: 12px;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 4px;
+        padding: 5px 10px;
+        margin-top: 5px;
+    }
+    
+    .form-actions {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .form-actions .btn {
+        margin: 0 10px;
+        min-width: 120px;
+    }
+    
+    /* RTL Support */
+    .form-control, .form-group label {
+        text-align: right;
+        direction: rtl;
+    }
+    
+    .datetime-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+        font-style: italic;
+    }
+    
+    .meeting-counter {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .meeting-counter h5 {
+        color: #495057;
+        margin-bottom: 10px;
+    }
+    
+    .counter-display {
+        font-size: 24px;
+        font-weight: bold;
+        color: #28a745;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>
+                        <i class="fas fa-plus-circle"></i>
+                        {{ title }}
+                    </h2>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.Date_of_submission.id_for_label }}">
+                                    {{ form.Date_of_submission.label }}
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.Date_of_submission }}
+                                <div class="datetime-info">
+                                    فرمت: YYYY-MM-DD HH:MM (مثال: 2024-01-15 14:30)
+                                </div>
+                                {% if form.Date_of_submission.help_text %}
+                                    <div class="help-text">{{ form.Date_of_submission.help_text }}</div>
+                                {% endif %}
+                                {{ form.Date_of_submission.errors }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.PersonalInfo.id_for_label }}">
+                                    {{ form.PersonalInfo.label }}
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.PersonalInfo }}
+                                {% if form.PersonalInfo.help_text %}
+                                    <div class="help-text">{{ form.PersonalInfo.help_text }}</div>
+                                {% endif %}
+                                {{ form.PersonalInfo.errors }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="meeting-counter">
+                        <h5>
+                            <i class="fas fa-users"></i>
+                            تعداد جلسات داخلی
+                        </h5>
+                        <div class="form-group">
+                            <label for="{{ form.Internal_meetings.id_for_label }}">
+                                {{ form.Internal_meetings.label }}
+                                <span class="required">*</span>
+                            </label>
+                            {{ form.Internal_meetings }}
+                            {% if form.Internal_meetings.help_text %}
+                                <div class="help-text">{{ form.Internal_meetings.help_text }}</div>
+                            {% endif %}
+                            {{ form.Internal_meetings.errors }}
+                        </div>
+                        <div class="counter-display" id="meeting-display">
+                            0 جلسه
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.Meeting_Minutes.id_for_label }}">
+                            {{ form.Meeting_Minutes.label }}
+                            <span class="required">*</span>
+                        </label>
+                        {{ form.Meeting_Minutes }}
+                        <div class="help-text">
+                            لطفاً صورت جلسات را به طور کامل و دقیق وارد کنید.
+                        </div>
+                        {% if form.Meeting_Minutes.help_text %}
+                            <div class="help-text">{{ form.Meeting_Minutes.help_text }}</div>
+                        {% endif %}
+                        {{ form.Meeting_Minutes.errors }}
+                    </div>
+                    
+                    <!-- نمایش خطاهای کلی فرم -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i>
+                            ذخیره نتیجه
+                        </button>
+                        <a href="{% url 'account:results_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            انصراف
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // اضافه کردن انیمیشن به فرم
+    $('.form-container').hide().fadeIn(500);
+    
+    // به‌روزرسانی نمایشگر تعداد جلسات
+    function updateMeetingDisplay() {
+        var meetingCount = $('#id_Internal_meetings').val() || 0;
+        $('#meeting-display').text(meetingCount + ' جلسه');
+        
+        // تغییر رنگ بر اساس تعداد
+        if (meetingCount == 0) {
+            $('#meeting-display').css('color', '#6c757d');
+        } else if (meetingCount <= 5) {
+            $('#meeting-display').css('color', '#28a745');
+        } else if (meetingCount <= 10) {
+            $('#meeting-display').css('color', '#ffc107');
+        } else {
+            $('#meeting-display').css('color', '#dc3545');
+        }
+    }
+    
+    // اجرای اولیه
+    updateMeetingDisplay();
+    
+    // به‌روزرسانی هنگام تغییر
+    $('#id_Internal_meetings').on('input change', updateMeetingDisplay);
+    
+    // بهبود تجربه کاربری برای فیلدهای تاریخ و زمان
+    $('input[type="datetime-local"]').on('focus', function() {
+        $(this).addClass('focused');
+    }).on('blur', function() {
+        $(this).removeClass('focused');
+    });
+    
+    // اعتبارسنجی سمت کلاینت
+    $('form').on('submit', function(e) {
+        var isValid = true;
+        var requiredFields = $(this).find('[required]');
+        
+        requiredFields.each(function() {
+            if (!$(this).val()) {
+                isValid = false;
+                $(this).addClass('is-invalid');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+        
+        // بررسی تعداد جلسات
+        var meetingCount = parseInt($('#id_Internal_meetings').val()) || 0;
+        if (meetingCount < 0) {
+            isValid = false;
+            $('#id_Internal_meetings').addClass('is-invalid');
+            alert('تعداد جلسات نمی‌تواند منفی باشد.');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            if (meetingCount >= 0) {
+                alert('لطفاً تمام فیلدهای الزامی را پر کنید.');
+            }
+        }
+    });
+    
+    // حذف کلاس خطا هنگام تایپ
+    $('input, textarea, select').on('input change', function() {
+        $(this).removeClass('is-invalid');
+    });
+    
+    // شمارنده کاراکتر برای صورت جلسات
+    $('#id_Meeting_Minutes').on('input', function() {
+        var length = $(this).val().length;
+        var maxLength = 5000; // حد تقریبی
+        
+        if (!$('.char-counter').length) {
+            $(this).after('<div class="char-counter help-text"></div>');
+        }
+        
+        $('.char-counter').text(length + ' کاراکتر');
+        
+        if (length > maxLength * 0.9) {
+            $('.char-counter').css('color', '#dc3545');
+        } else if (length > maxLength * 0.7) {
+            $('.char-counter').css('color', '#ffc107');
+        } else {
+            $('.char-counter').css('color', '#6c757d');
+        }
+    });
+});
+</script>
+{% endblock %}

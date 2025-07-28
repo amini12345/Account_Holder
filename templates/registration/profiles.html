@@ -1,0 +1,253 @@
+{% extends 'registration/base.html' %}
+{% load static %}
+
+{% block title %}پروفایل‌ها{% endblock %}
+
+{% block main %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-users mr-1"></i>
+                    پروفایل‌ها
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- لیست افراد -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">لیست افراد</h5>
+                                <div class="card-tools">
+                                    <span class="badge badge-primary">{{ total_people }} نفر</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- جستجو -->
+                                <form method="get" class="mb-3">
+                                    <div class="input-group">
+                                        <input type="text" name="search" class="form-control" 
+                                               placeholder="جستجو در نام، نام خانوادگی، شماره پرسنلی..." 
+                                               value="{{ search_query }}">
+                                        {% if selected_person_id %}
+                                            <input type="hidden" name="person_id" value="{{ selected_person_id }}">
+                                        {% endif %}
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary" type="submit">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% if search_query %}
+                                        <div class="mt-2">
+                                            <a href="{% url 'account:profiles' %}{% if selected_person_id %}?person_id={{ selected_person_id }}{% endif %}" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-times"></i> پاک کردن جستجو
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </form>
+                                
+                                <!-- لیست افراد -->
+                                <div style="max-height: 500px; overflow-y: auto;">
+                                    {% if people %}
+                                        <div class="list-group">
+                                            {% for person in people %}
+                                                <a href="?person_id={{ person.Personnel_number }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                                                   class="list-group-item list-group-item-action {% if selected_person_id == person.Personnel_number %}active{% endif %}">
+                                                    <div class="d-flex w-100 justify-content-between">
+                                                        <h6 class="mb-1">{{ person.name }} {{ person.family }}</h6>
+                                                        <small class="text-muted">{{ person.Personnel_number }}</small>
+                                                    </div>
+                                                    <p class="mb-1 text-muted">
+                                                        <i class="fas fa-id-card mr-1"></i>
+                                                        شماره پرسنلی: {{ person.Personnel_number }}
+                                                    </p>
+                                                    <p class="mb-1 text-muted">
+                                                        <i class="fas fa-id-badge mr-1"></i>
+                                                        کد ملی: {{ person.National_ID }}
+                                                    </p>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-boxes mr-1"></i>
+                                                        {{ person.items.count }} کالا
+                                                    </small>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center text-muted py-3">
+                                            <i class="fas fa-user-slash fa-2x mb-2"></i>
+                                            {% if search_query %}
+                                                <p>هیچ فردی با این جستجو یافت نشد</p>
+                                                <a href="{% url 'account:profiles' %}" class="btn btn-sm btn-outline-primary">
+                                                    نمایش همه افراد
+                                                </a>
+                                            {% else %}
+                                                <p>هیچ فردی در سیستم ثبت نشده است</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- کالاهای فرد انتخاب شده -->
+                    <div class="col-md-8">
+                        {% if selected_person %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-box mr-1"></i>
+                                        کالاهای {{ selected_person.name }} {{ selected_person.family }}
+                                    </h5>
+                                    <div class="card-tools">
+                                        <span class="badge badge-primary">
+                                            {{ person_items.count }} کالا
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- اطلاعات فرد -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>نام و نام خانوادگی:</strong> {{ selected_person.name }} {{ selected_person.family }}<br>
+                                            <strong>شماره پرسنلی:</strong> {{ selected_person.Personnel_number }}<br>
+                                            <strong>کد ملی:</strong> {{ selected_person.National_ID }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>مدرک تحصیلی:</strong> {{ selected_person.get_Educational_degree_display }}<br>
+                                            <strong>شماره همراه:</strong> {{ selected_person.phone_number }}<br>
+                                            {% if selected_person.email %}
+                                                <strong>ایمیل:</strong> {{ selected_person.email }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <!-- کالاهای فرد -->
+                                    {% if person_items %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>نام کالا</th>
+                                                        <th>نوع کالا</th>
+                                                        <th>وضعیت کالا</th>
+                                                        <th>برند</th>
+                                                        <th>شماره سریال</th>
+                                                        <th>کد محصول</th>
+                                                        <th>تاریخ ثبت</th>
+                                                        <th>عملیات</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for item in person_items %}
+                                                        <tr>
+                                                            <td>{{ item.Technical_items|default:"-" }}</td>
+                                                            <td>
+                                                                <span class="badge {% if item.type_Item == 'Technical' %}badge-success{% else %}badge-info{% endif %}">
+                                                                    {{ item.get_type_Item_display }}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge 
+                                                                    {% if item.status_item == 'Healthy' %}badge-success
+                                                                    {% elif item.status_item == 'Repairing' %}badge-warning
+                                                                    {% elif item.status_item == 'worn out' %}badge-danger
+                                                                    {% elif item.status_item == 'warehouse' %}badge-info
+                                                                    {% else %}badge-secondary{% endif %}">
+                                                                    {{ item.get_status_item_display|default:"-" }}
+                                                                </span>
+                                                            </td>
+                                                            <td>{{ item.brand|default:"-" }}</td>
+                                                            <td>{{ item.serial_number|default:"-" }}</td>
+                                                            <td>{{ item.Product_code|default:"-" }}</td>
+                                                            <td>{{ item.jinfo }}</td>
+                                                            <td>
+                                                                <div class="btn-group" role="group">
+                                                                    <a href="{% url 'account:item_detail' item.pk %}" 
+                                                                       class="btn btn-sm btn-info" title="جزئیات">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                    <a href="{% url 'account:item_edit' item.pk %}" 
+                                                                       class="btn btn-sm btn-warning" title="ویرایش">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+                                                                    <a href="{% url 'account:item_delete' item.pk %}" 
+                                                                       class="btn btn-sm btn-danger" title="حذف">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </a>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            این فرد هیچ کالایی ندارد.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-circle fa-5x text-muted mb-3"></i>
+                                    <h5 class="text-muted">فردی انتخاب نشده</h5>
+                                    <p class="text-muted">
+                                        برای مشاهده کالاها، یکی از افراد را از لیست سمت چپ انتخاب کنید.
+                                    </p>
+                                    {% if search_query %}
+                                        <p class="text-info">
+                                            <i class="fas fa-search"></i>
+                                            جستجو فعال: "{{ search_query }}"
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.list-group-item.active {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.list-group-item.active:hover {
+    background-color: #0056b3;
+}
+
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.input-group .form-control {
+    font-size: 14px;
+}
+
+.btn-group .btn {
+    font-size: 12px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,626 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   داشبورد
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.shadow {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.h-100 {
+    height: 100% !important;
+}
+
+.py-2 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+.no-gutters {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.no-gutters > .col,
+.no-gutters > [class*="col-"] {
+    padding-right: 0;
+    padding-left: 0;
+}
+
+/* استایل برای نمودار قابل کلیک */
+#statusChart {
+    cursor: pointer;
+}
+
+/* انیمیشن برای کارت زیر وضعیت‌ها */
+.chart-container {
+    transition: all 0.3s ease;
+}
+
+#subChartMessage {
+    transition: all 0.3s ease;
+}
+
+/* استایل برای دکمه بازگشت */
+#resetSubChart {
+    transition: all 0.3s ease;
+}
+
+#resetSubChart:hover {
+    background-color: #5a6268 !important;
+    border-color: #545b62 !important;
+}
+</style>
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- خوش آمدگویی -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-tachometer-alt mr-2"></i>
+            داشبورد
+          </h3>
+        </div>
+        <div class="card-body text-center">
+          <h4 class="text-primary mb-3">خوش آمدید {{ user.get_full_name|default:user.username }}</h4>
+          <p class="text-muted">آمار و گزارش‌های کالاها</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- آمار کلی کالاها -->
+  <div class="row mb-4">
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-info">
+        <div class="inner">
+          <h3>{{ total_items }}</h3>
+          <p>تعداد کل کالاها</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-boxes"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-success">
+        <div class="inner">
+          <h3>{{ technical_items }}</h3>
+          <p>کالاهای فنی</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-cogs"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-warning">
+        <div class="inner">
+          <h3>{{ non_technical_items }}</h3>
+          <p>کالاهای غیر فنی</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-box"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-danger">
+        <div class="inner">
+          <h3>{% if total_items > 0 %}{% widthratio technical_items total_items 100 %}%{% else %}0%{% endif %}</h3>
+          <p>درصد کالاهای فنی</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-percentage"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نمودارهای دایره‌ای -->
+  <div class="row">
+    <!-- نمودار نوع کالاها -->
+    <div class="col-md-4">
+      <div class="card card-outline card-primary">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-chart-pie mr-2"></i>
+            نمودار کالاهای فنی و غیر فنی
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="position: relative; height: 300px;">
+            <canvas id="typeChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- نمودار وضعیت کالاها -->
+    <div class="col-md-4">
+      <div class="card card-outline card-success">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-chart-pie mr-2"></i>
+            نمودار وضعیت کالاها
+          </h3>
+          <div class="card-tools">
+            <small class="text-muted">
+              <i class="fas fa-hand-pointer"></i> قابل کلیک
+            </small>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="position: relative; height: 300px;">
+            <canvas id="statusChart"></canvas>
+          </div>
+          <div class="text-center mt-2">
+            <small class="text-muted">
+              <i class="fas fa-info-circle"></i>
+              برای مشاهده زیر وضعیت‌ها روی هر بخش کلیک کنید
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- نمودار زیر وضعیت‌ها -->
+    <div class="col-md-4">
+      <div class="card card-outline card-warning">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-chart-pie mr-2"></i>
+            نمودار زیر وضعیت‌ها
+          </h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-sm btn-secondary" id="resetSubChart" style="display: none;">
+              <i class="fas fa-undo"></i> بازگشت
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="subChartMessage" class="text-center text-muted" style="padding: 50px 0;">
+            <i class="fas fa-info-circle fa-2x mb-3"></i>
+            <p>برای مشاهده زیر وضعیت‌ها، روی یکی از وضعیت‌های نمودار کلیک کنید</p>
+          </div>
+          <div class="chart-container" style="position: relative; height: 300px; display: none;">
+            <canvas id="subStatusChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- جدول آمار وضعیت‌ها -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card card-outline card-info">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-table mr-2"></i>
+            آمار تفصیلی وضعیت کالاها
+          </h3>
+          <div class="card-tools">
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead class="bg-light">
+                <tr>
+                  <th>وضعیت اصلی</th>
+                  <th>تعداد</th>
+                  <th>زیر وضعیت‌ها</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for status_data in status_stats %}
+                <tr>
+                  <td><strong>{{ status_data.name }}</strong></td>
+                  <td>
+                    <span class="badge badge-primary">{{ status_data.count }}</span>
+                    <small class="text-muted">({{ status_data.percentage }}%)</small>
+                  </td>
+                  <td>
+                    {% if status_data.sub_statuses %}
+                      <div class="row">
+                        {% for sub_data in status_data.sub_statuses %}
+                          <div class="col-md-12 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <div>
+                                <small class="text-muted">{{ sub_data.name }}:</small>
+                                <span class="badge {% if sub_data.code == 'no_sub_status' %}badge-warning{% else %}badge-secondary{% endif %}">{{ sub_data.count }}</span>
+                              </div>
+                              <div class="text-right">
+                                <small class="text-muted d-block">
+                                  {{ sub_data.percentage_parent }}% از {{ status_data.name }}
+                                </small>
+                                <small class="text-muted d-block">
+                                  {{ sub_data.percentage_total }}% از کل کالاها
+                                </small>
+                                {% if sub_data.percentage_parent_with_sub > 0 %}
+                                <small class="text-info d-block">
+                                  {{ sub_data.percentage_parent_with_sub }}% از آیتم‌های دارای زیر وضعیت
+                                </small>
+                                {% endif %}
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <span class="text-muted">ندارد</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot class="bg-light">
+                <tr>
+                  <td><strong>مجموع</strong></td>
+                  <td>
+                    <span class="badge badge-primary">{{ total_status_items }}</span>
+                    <small class="text-muted">
+                      {% if total_items > 0 %}
+                        ({% widthratio total_status_items total_items 100 %}% از {{ total_items }})
+                      {% else %}
+                        (0%)
+                      {% endif %}
+                    </small>
+                  </td>
+                  <td>
+                    <small class="text-muted">
+                      مجموع زیر وضعیت‌ها: {{ total_sub_status_items }}
+                    </small>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<!-- داده‌های جنگو به صورت JSON -->
+{{ dashboard_data|json_script:"dashboard-data" }}
+
+<script>
+// ثبت پلاگین ChartDataLabels
+Chart.register(ChartDataLabels);
+
+// دریافت داده‌ها از JSON
+const dashboardDataElement = document.getElementById('dashboard-data');
+const dashboardData = JSON.parse(dashboardDataElement.textContent);
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (dashboardData.hasData) {
+        // نمودار نوع کالاها
+        const typeCtx = document.getElementById('typeChart').getContext('2d');
+        const typeChart = new Chart(typeCtx, {
+            type: 'pie',
+            data: {
+                labels: ['کالاهای فنی', 'کالاهای غیر فنی'],
+                datasets: [{
+                    data: [dashboardData.technicalItems, dashboardData.nonTechnicalItems],
+                backgroundColor: [
+                    '#28a745',
+                    '#ffc107'
+                ],
+                borderColor: [
+                    '#1e7e34',
+                    '#e0a800'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            family: 'IRANSans, Tahoma, Arial, sans-serif'
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            if (total === 0) return context.label + ': 0 (0%)';
+                            const percentage = ((context.parsed * 100) / total).toFixed(1);
+                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                        }
+                    }
+                },
+                datalabels: {
+                    display: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((context.parsed * 100) / total);
+                        // فقط درصدهای بالای 3% را نمایش بده
+                        return percentage >= 3;
+                    },
+                    color: 'white',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: function(value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        if (total === 0) return '0%';
+                        const percentage = ((value * 100) / total).toFixed(1);
+                        return percentage + '%';
+                    },
+                    anchor: 'center',
+                    align: 'center',
+                    textStrokeColor: 'rgba(0,0,0,0.5)',
+                    textStrokeWidth: 1
+                }
+            }
+        }
+    });
+
+        // نمودار وضعیت کالاها
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: dashboardData.statusLabels,
+                datasets: [{
+                    data: dashboardData.statusCounts,
+                backgroundColor: [
+                    '#dc3545',
+                    '#17a2b8',
+                    '#6c757d'
+                ],
+                borderColor: [
+                    '#c82333',
+                    '#138496',
+                    '#5a6268'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            onClick: function(event, elements) {
+                if (elements.length > 0) {
+                    const clickedIndex = elements[0].index;
+                    const clickedStatus = dashboardData.statusData[clickedIndex];
+                    
+                    if (clickedStatus.sub_statuses && clickedStatus.sub_statuses.length > 0) {
+                        showSubStatusChart(clickedStatus);
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            family: 'IRANSans, Tahoma, Arial, sans-serif'
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            if (total === 0) return context.label + ': 0 (0%)';
+                            const percentage = ((context.parsed * 100) / total).toFixed(1);
+                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                        }
+                    }
+                },
+                datalabels: {
+                    display: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((context.parsed * 100) / total);
+                        // فقط درصدهای بالای 3% را نمایش بده
+                        return percentage >= 3;
+                    },
+                    color: 'white',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: function(value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        if (total === 0) return '0%';
+                        const percentage = ((value * 100) / total).toFixed(1);
+                        return percentage + '%';
+                    },
+                    anchor: 'center',
+                    align: 'center',
+                    textStrokeColor: 'rgba(0,0,0,0.5)',
+                    textStrokeWidth: 1
+                }
+            }
+        }
+    });
+
+    // متغیر برای ذخیره نمودار زیر وضعیت‌ها
+    let subStatusChart = null;
+    
+    // تابع نمایش نمودار زیر وضعیت‌ها
+    function showSubStatusChart(statusData) {
+        const subStatusCtx = document.getElementById('subStatusChart').getContext('2d');
+        
+        // اگر نمودار قبلی وجود دارد، آن را نابود کن
+        if (subStatusChart) {
+            subStatusChart.destroy();
+        }
+        
+        // رنگ‌های مختلف برای زیر وضعیت‌ها
+        const subStatusColors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', 
+            '#FF9F40', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'
+        ];
+        
+        const labels = statusData.sub_statuses.map(sub => sub.name);
+        const data = statusData.sub_statuses.map(sub => sub.count);
+        
+        // ایجاد نمودار جدید
+        subStatusChart = new Chart(subStatusCtx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: subStatusColors.slice(0, labels.length),
+                    borderColor: subStatusColors.slice(0, labels.length).map(color => color.replace('0.8', '1')),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'زیر وضعیت‌های ' + statusData.name,
+                        font: {
+                            family: 'IRANSans, Tahoma, Arial, sans-serif',
+                            size: 16,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                family: 'IRANSans, Tahoma, Arial, sans-serif',
+                                size: 12
+                            },
+                            boxWidth: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                if (total === 0) return context.label + ': 0 (0%)';
+                                const percentage = ((context.parsed * 100) / total).toFixed(1);
+                                const parentPercentage = ((context.parsed * 100) / statusData.count).toFixed(1);
+                                return [
+                                    context.label + ': ' + context.parsed,
+                                    `${percentage}% از زیر وضعیت‌ها`,
+                                    `${parentPercentage}% از ${statusData.name}`
+                                ];
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed * 100) / total);
+                            // فقط درصدهای بالای 5% را نمایش بده
+                            return percentage >= 5;
+                        },
+                        color: 'white',
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        formatter: function(value, context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            if (total === 0) return '0%';
+                            const percentage = ((value * 100) / total).toFixed(1);
+                            return percentage + '%';
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        textStrokeColor: 'rgba(0,0,0,0.5)',
+                        textStrokeWidth: 1
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+        
+        // نمایش نمودار و مخفی کردن پیام
+        document.getElementById('subChartMessage').style.display = 'none';
+        document.getElementById('subStatusChart').parentElement.style.display = 'block';
+        document.getElementById('resetSubChart').style.display = 'inline-block';
+    }
+    
+    // تابع بازگشت به حالت اولیه
+    function resetSubChart() {
+        if (subStatusChart) {
+            subStatusChart.destroy();
+            subStatusChart = null;
+        }
+        
+        document.getElementById('subChartMessage').style.display = 'block';
+        document.getElementById('subStatusChart').parentElement.style.display = 'none';
+        document.getElementById('resetSubChart').style.display = 'none';
+    }
+    
+    // اضافه کردن event listener برای دکمه بازگشت
+        document.getElementById('resetSubChart').addEventListener('click', resetSubChart);
+    } else {
+        // نمایش پیام عدم وجود داده
+        const typeCtx = document.getElementById('typeChart').getContext('2d');
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const subStatusCtx = document.getElementById('subStatusChart').getContext('2d');
+        
+        typeCtx.font = '16px Arial';
+        typeCtx.textAlign = 'center';
+        typeCtx.fillText('داده‌ای برای نمایش وجود ندارد', 150, 150);
+        
+        statusCtx.font = '16px Arial';
+        statusCtx.textAlign = 'center';
+        statusCtx.fillText('داده‌ای برای نمایش وجود ندارد', 150, 150);
+        
+        subStatusCtx.font = '16px Arial';
+        subStatusCtx.textAlign = 'center';
+        subStatusCtx.fillText('داده‌ای برای نمایش وجود ندارد', 150, 150);
+    }
+});
+</script>
+{% endblock %}

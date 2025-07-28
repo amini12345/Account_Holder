@@ -1,0 +1,368 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   تأیید ورودی Excel - تأیید فیلد به فیلد
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-check-double"></i> تأیید ورودی داده‌ها - تأیید فیلد به فیلد
+          </h3>
+          <div class="card-tools">
+            <a href="{% url 'account:import_excel' %}" class="btn btn-secondary btn-sm">
+              <i class="fas fa-arrow-left"></i> بازگشت
+            </a>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- خلاصه آمار -->
+          <div class="row mb-4">
+            <div class="col-md-3">
+              <div class="info-box bg-info">
+                <span class="info-box-icon"><i class="fas fa-list"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">کل موارد</span>
+                  <span class="info-box-number">{{ total_items }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="info-box bg-success">
+                <span class="info-box-icon"><i class="fas fa-plus"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">موارد جدید</span>
+                  <span class="info-box-number">{{ create_count }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="info-box bg-warning">
+                <span class="info-box-icon"><i class="fas fa-edit"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">به‌روزرسانی</span>
+                  <span class="info-box-number">{{ update_count }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="info-box bg-danger">
+                <span class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">خطاها</span>
+                  <span class="info-box-number">{{ error_count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- فرم تأیید -->
+          <form method="post" action="{% url 'account:confirm_import' %}" id="confirmForm">
+            {% csrf_token %}
+            
+            <div class="alert alert-info">
+              <h5><i class="icon fas fa-info-circle"></i> راهنما</h5>
+              <ul class="mb-0">
+                <li>هر ردیف را بررسی کرده و فیلدهای مورد نظر را تأیید کنید</li>
+                <li>فیلدهای قرمز الزامی هستند و باید تکمیل شوند</li>
+                <li>فیلدهای زرد اختیاری هستند اما توصیه می‌شود تکمیل شوند</li>
+                <li>می‌توانید مقادیر را ویرایش کنید</li>
+              </ul>
+            </div>
+
+            <!-- دکمه‌های کنترل کلی -->
+            <div class="mb-3">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllItems()">
+                <i class="fas fa-check-square"></i> انتخاب همه آیتم‌ها
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllItems()">
+                <i class="fas fa-square"></i> لغو انتخاب همه
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-success" onclick="selectValidItems()">
+                <i class="fas fa-check"></i> انتخاب موارد معتبر
+              </button>
+            </div>
+
+            <!-- آکاردئون برای هر آیتم -->
+            <div class="accordion" id="itemsAccordion">
+              {% for item in processed_items %}
+                <div class="card mb-2 {% if item.has_errors %}border-danger{% elif item.has_warnings %}border-warning{% else %}border-success{% endif %}">
+                  <div class="card-header" id="heading{{ item.row_number }}">
+                    <div class="row align-items-center">
+                      <div class="col-md-1">
+                        <div class="custom-control custom-checkbox">
+                          <input type="checkbox" 
+                                 class="custom-control-input item-checkbox" 
+                                 id="item{{ item.row_number }}"
+                                 name="confirmed_items" 
+                                 value="{{ item.row_number }}"
+                                 {% if not item.has_errors %}checked{% endif %}>
+                          <label class="custom-control-label" for="item{{ item.row_number }}"></label>
+                        </div>
+                      </div>
+                      <div class="col-md-1">
+                        <strong>{{ item.row_number }}</strong>
+                      </div>
+                      <div class="col-md-2">
+                        {% if item.action_type == 'create' %}
+                          <span class="badge badge-success">
+                            <i class="fas fa-plus"></i> جدید
+                          </span>
+                        {% else %}
+                          <span class="badge badge-warning">
+                            <i class="fas fa-edit"></i> به‌روزرسانی
+                          </span>
+                        {% endif %}
+                      </div>
+                      <div class="col-md-4">
+                        <strong>{{ item.field_confirmations.Technical_items.display }}</strong>
+                        {% if item.existing_item_name %}
+                          <br><small class="text-muted">موجود: {{ item.existing_item_name }}</small>
+                        {% endif %}
+                      </div>
+                      <div class="col-md-2">
+                        {% if item.has_errors %}
+                          <span class="badge badge-danger">
+                            <i class="fas fa-exclamation-circle"></i> خطا
+                          </span>
+                        {% elif item.has_warnings %}
+                          <span class="badge badge-warning">
+                            <i class="fas fa-exclamation-triangle"></i> هشدار
+                          </span>
+                        {% else %}
+                          <span class="badge badge-success">
+                            <i class="fas fa-check"></i> آماده
+                          </span>
+                        {% endif %}
+                      </div>
+                      <div class="col-md-2">
+                        <button class="btn btn-sm btn-outline-primary" type="button" 
+                                data-toggle="collapse" 
+                                data-target="#collapse{{ item.row_number }}" 
+                                aria-expanded="false" 
+                                aria-controls="collapse{{ item.row_number }}">
+                          <i class="fas fa-edit"></i> ویرایش فیلدها
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="collapse{{ item.row_number }}" 
+                       class="collapse" 
+                       aria-labelledby="heading{{ item.row_number }}" 
+                       data-parent="#itemsAccordion">
+                    <div class="card-body">
+                      <div class="row">
+                        {% for field_name, field_info in item.field_confirmations.items %}
+                          <div class="col-md-6 mb-3">
+                            <label for="field_{{ item.row_number }}_{{ field_name }}" 
+                                   class="form-label {% if field_info.required %}text-danger{% elif not field_info.confirmed %}text-warning{% endif %}">
+                              {{ field_info.label }}
+                              {% if field_info.required %}<span class="text-danger">*</span>{% endif %}
+                              {% if not field_info.confirmed and field_info.value %}
+                                <i class="fas fa-exclamation-triangle text-warning" title="نیاز به بررسی"></i>
+                              {% endif %}
+                            </label>
+                            
+                            {% if field_info.type == 'text' %}
+                              <input type="text" 
+                                     class="form-control {% if field_info.required and not field_info.value %}is-invalid{% elif not field_info.confirmed and field_info.value %}is-warning{% endif %}"
+                                     id="field_{{ item.row_number }}_{{ field_name }}"
+                                     name="field_{{ item.row_number }}_{{ field_name }}"
+                                     value="{{ field_info.value|default:'' }}"
+                                     {% if field_info.required %}required{% endif %}>
+                            
+                            {% elif field_info.type == 'textarea' %}
+                              <textarea class="form-control {% if field_info.required and not field_info.value %}is-invalid{% elif not field_info.confirmed and field_info.value %}is-warning{% endif %}"
+                                        id="field_{{ item.row_number }}_{{ field_name }}"
+                                        name="field_{{ item.row_number }}_{{ field_name }}"
+                                        rows="3"
+                                        {% if field_info.required %}required{% endif %}>{{ field_info.value|default:'' }}</textarea>
+                            
+                            {% elif field_info.type == 'select' %}
+                              <select class="form-control {% if field_info.required and not field_info.value %}is-invalid{% elif not field_info.confirmed and field_info.value %}is-warning{% endif %}"
+                                      id="field_{{ item.row_number }}_{{ field_name }}"
+                                      name="field_{{ item.row_number }}_{{ field_name }}"
+                                      {% if field_name == 'status_item' %}onchange="updateSubStatus({{ item.row_number }}, this.value)"{% endif %}
+                                      {% if field_info.required %}required{% endif %}>
+                                {% if not field_info.required %}
+                                  <option value="">انتخاب کنید...</option>
+                                {% endif %}
+                                {% for option in field_info.options %}
+                                  <option value="{{ option.value }}" 
+                                          {% if option.value == field_info.value %}selected{% endif %}>
+                                    {{ option.label }}
+                                  </option>
+                                {% endfor %}
+                              </select>
+                            {% endif %}
+                            
+                            {% if field_info.required and not field_info.value %}
+                              <div class="invalid-feedback">
+                                این فیلد الزامی است
+                              </div>
+                            {% elif not field_info.confirmed and field_info.value %}
+                              <small class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> این فیلد نیاز به بررسی دارد
+                              </small>
+                            {% endif %}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <!-- دکمه‌های عملیات -->
+            <div class="mt-4">
+              <button type="submit" class="btn btn-success btn-lg" onclick="return confirmSubmit()">
+                <i class="fas fa-check"></i> تأیید و اعمال تغییرات
+              </button>
+              <a href="{% url 'account:import_excel' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times"></i> انصراف
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .is-warning {
+      border-color: #ffc107;
+    }
+    .text-warning {
+      color: #856404 !important;
+    }
+    .border-warning {
+      border-color: #ffc107 !important;
+    }
+    .border-success {
+      border-color: #28a745 !important;
+    }
+    .border-danger {
+      border-color: #dc3545 !important;
+    }
+  </style>
+
+  <script>
+    function selectAllItems() {
+      document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        checkbox.checked = true;
+      });
+    }
+
+    function deselectAllItems() {
+      document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        checkbox.checked = false;
+      });
+    }
+
+    function selectValidItems() {
+      document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        // انتخاب فقط آیتم‌هایی که خطا ندارند
+        const card = checkbox.closest('.card');
+        const hasError = card.classList.contains('border-danger');
+        checkbox.checked = !hasError;
+      });
+    }
+
+    function updateSubStatus(rowNumber, mainStatus) {
+      const subStatusSelect = document.getElementById(`field_${rowNumber}_status_sub_item`);
+      
+      // پاک کردن گزینه‌های قبلی
+      subStatusSelect.innerHTML = '<option value="">انتخاب کنید...</option>';
+      
+      // تعریف گزینه‌های زیر وضعیت
+      const subStatusOptions = {
+        'hardware': [
+          {value: 'repair', label: 'تعمیر'},
+          {value: 'upgrade', label: 'ارتقا'}
+        ],
+        'Delivery': [
+          {value: 'external', label: 'خارج'},
+          {value: 'internal', label: 'داخل'}
+        ],
+        'warehouse': [
+          {value: 'ready', label: 'آماده بکار'},
+          {value: 'returned_good', label: 'عودتی سالم'},
+          {value: 'returned_worn', label: 'عودتی فرسوده'}
+        ]
+      };
+      
+      // اضافه کردن گزینه‌های جدید
+      if (subStatusOptions[mainStatus]) {
+        subStatusOptions[mainStatus].forEach(function(option) {
+          const optionElement = document.createElement('option');
+          optionElement.value = option.value;
+          optionElement.textContent = option.label;
+          subStatusSelect.appendChild(optionElement);
+        });
+      }
+    }
+
+    function confirmSubmit() {
+      const checkedItems = document.querySelectorAll('.item-checkbox:checked').length;
+      if (checkedItems === 0) {
+        alert('لطفاً حداقل یک مورد را انتخاب کنید.');
+        return false;
+      }
+      
+      // بررسی فیلدهای الزامی
+      let hasRequiredErrors = false;
+      document.querySelectorAll('.item-checkbox:checked').forEach(function(checkbox) {
+        const rowNumber = checkbox.value;
+        const requiredFields = document.querySelectorAll(`[name^="field_${rowNumber}_"][required]`);
+        
+        requiredFields.forEach(function(field) {
+          if (!field.value.trim()) {
+            hasRequiredErrors = true;
+            field.classList.add('is-invalid');
+          } else {
+            field.classList.remove('is-invalid');
+          }
+        });
+      });
+      
+      if (hasRequiredErrors) {
+        alert('لطفاً تمام فیلدهای الزامی (قرمز) را تکمیل کنید.');
+        return false;
+      }
+      
+      return confirm(`آیا از اعمال تغییرات روی ${checkedItems} مورد انتخاب شده مطمئن هستید؟`);
+    }
+
+    // اعتبارسنجی فیلدهای الزامی در زمان واقعی
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('input[required], select[required], textarea[required]').forEach(function(field) {
+        field.addEventListener('input', function() {
+          if (this.value.trim()) {
+            this.classList.remove('is-invalid');
+          } else {
+            this.classList.add('is-invalid');
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

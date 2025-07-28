@@ -1,0 +1,191 @@
+{% load static %}
+<style>
+/* Enhanced Active State Styling for Sidebar */
+.nav-sidebar .nav-link.active {
+    background-color: #007bff !important;
+    color: #fff !important;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+    transform: translateX(3px);
+    transition: all 0.3s ease;
+}
+
+.nav-sidebar .nav-link.active i {
+    color: #fff !important;
+}
+
+.nav-sidebar .nav-item.has-treeview.menu-open > .nav-link {
+    background-color: rgba(0,123,255,0.2) !important;
+    border-radius: 5px;
+}
+
+.nav-sidebar .nav-treeview .nav-link.active {
+    background-color: #0056b3 !important;
+    margin-right: 10px;
+    border-right: 3px solid #ffc107;
+    padding-right: 15px;
+}
+
+.nav-sidebar .nav-link:hover {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-sidebar .nav-item.has-treeview.menu-open .nav-treeview {
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 0 0 5px 5px;
+    margin-top: 5px;
+}
+</style>
+
+<!-- Main Sidebar Container -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="{% url 'account:home' %}" class="brand-link">
+      <img src="{% static 'registration/Adminlte/dist/img/AdminLTELogo.png' %}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
+           style="opacity: .8">
+      <span class="brand-text font-weight-light">پنل مدیریت</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Sidebar user panel (optional) -->
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image">
+          
+        </div>
+        <div class="info">
+          <a href="#" class="d-block">{{user.get_full_name}}</a>
+        </div>
+      </div>
+
+      <!-- Sidebar Menu -->
+<nav class="mt-2">
+    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                
+        <!-- پروفایل‌ها -->
+        <li class="nav-item">
+            <a href="{% url 'account:profiles' %}" class="nav-link {% if request.resolver_match.url_name == 'profiles' %}active{% endif %}">
+                <i class="nav-icon fas fa-users"></i>
+                <p>پروفایل‌  نفرات</p>
+            </a>
+        </li>
+
+        <!-- کالاها -->
+        <li class="nav-item has-treeview {% if request.resolver_match.url_name in 'dashboard,home,item_add,item_detail,item_edit,history' %}menu-open{% endif %}">
+            <a href="#" class="nav-link {% if request.resolver_match.url_name in 'dashboard,home,item_add,item_detail,item_edit,history' %}active{% endif %}">
+                <i class="nav-icon fas fa-boxes"></i>
+                <p>
+                    کالاها
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a href="{% url 'account:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <i class="fa fa-tachometer-alt nav-icon"></i>
+                        <p>آمار و نمودار کالاها</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'item_detail' or request.resolver_match.url_name == 'item_edit' %}active{% endif %}">
+                        <i class="fa fa-list nav-icon"></i>
+                        <p>لیست کالاها</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account:item_add' %}" class="nav-link {% if request.resolver_match.url_name == 'item_add' %}active{% endif %}">
+                        <i class="fa fa-plus nav-icon"></i>
+                        <p>افزودن کالا</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account:history' %}" class="nav-link {% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+                        <i class="fa fa-history nav-icon"></i>
+                        <p>تاریخچه تغییرات</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- مدارک -->
+        <li class="nav-item has-treeview {% if request.resolver_match.url_name in 'documents_list,document_add,document_detail,document_edit' %}menu-open{% endif %}">
+            <a href="#" class="nav-link {% if request.resolver_match.url_name in 'documents_list,document_add,document_detail,document_edit' %}active{% endif %}">
+                <i class="nav-icon fas fa-certificate"></i>
+                <p>
+                    مدارک
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a href="{% url 'account:documents_list' %}" class="nav-link {% if request.resolver_match.url_name == 'documents_list' or request.resolver_match.url_name == 'document_detail' or request.resolver_match.url_name == 'document_edit' %}active{% endif %}">
+                        <i class="fa fa-list nav-icon"></i>
+                        <p>لیست مدارک</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account:document_add' %}" class="nav-link {% if request.resolver_match.url_name == 'document_add' %}active{% endif %}">
+                        <i class="fa fa-plus nav-icon"></i>
+                        <p>افزودن مدرک</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- ماموریت‌ها -->
+        <li class="nav-item has-treeview {% if request.resolver_match.url_name in 'missions_list,mission_add,mission_edit' %}menu-open{% endif %}">
+            <a href="#" class="nav-link {% if request.resolver_match.url_name in 'missions_list,mission_add,mission_edit' %}active{% endif %}">
+                <i class="nav-icon fas fa-plane"></i>
+                <p>
+                    ماموریت‌ها
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a href="{% url 'account:missions_list' %}" class="nav-link {% if request.resolver_match.url_name == 'missions_list' or request.resolver_match.url_name == 'mission_edit' %}active{% endif %}">
+                        <i class="fa fa-list nav-icon"></i>
+                        <p>لیست ماموریت‌ها</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account:mission_add' %}" class="nav-link {% if request.resolver_match.url_name == 'mission_add' %}active{% endif %}">
+                        <i class="fa fa-plus nav-icon"></i>
+                        <p>افزودن ماموریت</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- نتایج -->
+        <li class="nav-item has-treeview {% if request.resolver_match.url_name in 'results_list,result_add,result_edit' %}menu-open{% endif %}">
+            <a href="#" class="nav-link {% if request.resolver_match.url_name in 'results_list,result_add,result_edit' %}active{% endif %}">
+                <i class="nav-icon fas fa-chart-line"></i>
+                <p>
+                    نتایج
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a href="{% url 'account:results_list' %}" class="nav-link {% if request.resolver_match.url_name == 'results_list' or request.resolver_match.url_name == 'result_edit' %}active{% endif %}">
+                        <i class="fa fa-list nav-icon"></i>
+                        <p>لیست نتایج</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account:result_add' %}" class="nav-link {% if request.resolver_match.url_name == 'result_add' %}active{% endif %}">
+                        <i class="fa fa-plus nav-icon"></i>
+                        <p>افزودن نتیجه</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+      <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+  </aside>

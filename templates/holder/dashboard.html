@@ -1,0 +1,779 @@
+{% extends 'holder/base.html' %}
+{% load form_tags %}
+
+{% block title %}داشبورد کاربر{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 20px 0;
+    }
+    
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .dashboard-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-align: center;
+    }
+    
+    .dashboard-subtitle {
+        text-align: center;
+        opacity: 0.9;
+        margin-top: 10px;
+        font-size: 1.1rem;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border: none;
+        margin-bottom: 25px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+    
+    .card-header-custom {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 20px;
+        border: none;
+        font-weight: 600;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .card-header-custom.personal {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .card-header-custom.items {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .card-header-custom.history {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .card-header-custom.documents {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    
+    .card-header-custom.missions {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+    
+    .card-header-custom.results {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #333;
+    }
+    
+    .card-body-custom {
+        padding: 25px;
+    }
+    
+    .info-item {
+        background: #f8f9ff;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+    
+    .info-item:hover {
+        background: #e8ecff;
+        transform: translateX(5px);
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .info-value {
+        color: #2d3748;
+        font-size: 1.1rem;
+    }
+    
+    .table-custom {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .table-custom thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px;
+        font-weight: 600;
+    }
+    
+    .table-custom tbody tr {
+        transition: background-color 0.3s ease;
+    }
+    
+    .table-custom tbody tr:hover {
+        background-color: #f8f9ff;
+    }
+    
+    .table-custom tbody td {
+        padding: 12px 15px;
+        border-color: #e2e8f0;
+    }
+    
+    .btn-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    
+    .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #718096;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+    
+    .section-icon {
+        margin-left: 10px;
+        font-size: 1.3rem;
+    }
+    
+    .stats-row {
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+    
+    .stat-label {
+        color: #718096;
+        font-weight: 600;
+    }
+    
+    .modal-content {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+    
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        border: none;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .table-selector {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .table-selector h4 {
+        color: #667eea;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .table-section {
+        display: none;
+    }
+    
+    .table-section.active {
+        display: block;
+    }
+    
+    #tableSelector {
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        padding: 12px;
+        font-size: 1.1rem;
+    }
+    
+    #tableSelector:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="container">
+        <!-- Header Section -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">داشبورد کاربر</h1>
+            <p class="dashboard-subtitle">خوش آمدید {{ user.name }} {{ user.family }}</p>
+        </div>
+
+        <!-- Statistics Row -->
+        <div class="row stats-row">
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ items|length }}</div>
+                    <div class="stat-label">تجهیزات</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ user.documents.count }}</div>
+                    <div class="stat-label">مدارک</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ user.missions.count }}</div>
+                    <div class="stat-label">ماموریت‌ها</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ results|length }}</div>
+                    <div class="stat-label">گزارش‌ها</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Section -->
+        {% if pending_requests %}
+        <div class="info-card">
+            <div class="card-header-custom" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);">
+                <span><i class="fas fa-bell section-icon"></i>اعلان‌های در انتظار تایید ({{ pending_requests|length }})</span>
+            </div>
+            <div class="card-body-custom">
+                {% for request in pending_requests %}
+                <div class="alert alert-warning d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            درخواست {{ request.get_action_type_display }} کالا: {{ request.item.Technical_items }}
+                        </h6>
+                        <p class="mb-1"><strong>توسط مدیر:</strong> {{ request.admin_user }}</p>
+                        <p class="mb-1"><strong>توضیحات:</strong> {{ request.description }}</p>
+                        {% if request.proposed_changes %}
+                        <div class="mt-2">
+                            <strong>تغییرات پیشنهادی:</strong>
+                            <ul class="mb-0 mt-1">
+                                {% for field, change in request.proposed_changes.items %}
+                                <li>
+                                    <strong>{{ field }}:</strong> 
+                                    {{ change.old|default:"---" }} → {{ change.new|default:"---" }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        <small class="text-muted">{{ request.jinfo }}</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form method="post" action="{% url 'approve_change_request' request.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('آی�� از تایید این درخواست اطمینان دارید؟')">
+                                <i class="fas fa-check"></i> تایید
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'reject_change_request' request.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('آیا از رد این درخواست اطمینان دارید؟')">
+                                <i class="fas fa-times"></i> رد
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Personal Information -->
+        <div class="info-card">
+            <div class="card-header-custom personal">
+                <span><i class="fas fa-user section-icon"></i>اطلاعات شخصی</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">نام</div>
+                            <div class="info-value">{{ user.name }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">نام خانوادگی</div>
+                            <div class="info-value">{{ user.family }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">شماره پرسنلی</div>
+                            <div class="info-value">{{ user.Personnel_number }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">کد ملی</div>
+                            <div class="info-value">{{ user.National_ID }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">تاریخ تولد</div>
+                            <div class="info-value">{{ user.jinfo }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">مدرک تحصیلی</div>
+                            <div class="info-value">{{ user.get_Educational_degree_display }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">ایمیل</div>
+                            <div class="info-value">{{ user.email|default:"وارد نشده" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <div class="info-label">شماره تماس</div>
+                            <div class="info-value">{{ user.phone_number }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Selector -->
+        <div class="table-selector">
+            <h4><i class="fas fa-table me-2"></i>انتخاب جدول برای نمایش</h4>
+            <select id="tableSelector" class="form-select">
+                <option value="">جدولی را برای نمایش انتخاب کنید...</option>
+                <option value="items">اقلام و تجهیزات</option>
+                <option value="documents">مدارک</option>
+                <option value="missions">ماموریت‌ها</option>
+                <option value="results">نتایج و گزارش‌ها</option>
+            </select>
+        </div>
+
+        <!-- اقلام و تجهیزات -->
+        <div class="info-card table-section" id="items-section">
+            <div class="card-header-custom items">
+                <span><i class="fas fa-laptop section-icon"></i>اقلام و تجهیزات شما</span>
+            </div>
+            <div class="card-body-custom">
+                {% if items %}
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>نام کالا</th>
+                                <th>نوع کالا</th>
+                                <th>وضعیت کالا</th>
+                                <th>برند</th>
+                                <th>پیکربندی</th>
+                                <th>شماره سریال</th>
+                                <th>کد محصول</th>
+                                <th>تاریخ ثبت</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>{{ item.Technical_items|default:"-" }}</td>
+                                <td>{{ item.get_type_Item_display|default:"-" }}</td>
+                                <td>{{ item.get_status_item_display|default:"-" }}</td>
+                                <td>{{ item.brand|default:"-" }}</td>
+                                <td>{{ item.Configuration|default:"-"|truncatechars:50 }}</td>
+                                <td>{{ item.serial_number|default:"-" }}</td>
+                                <td>{{ item.Product_code|default:"-" }}</td>
+                                <td>{{ item.jinfo }}</td>
+                                
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <p>هنوز اقلام و تجهیزاتی برای شما ثبت نشده است.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- مدارک -->
+        <div class="info-card table-section" id="documents-section">
+            <div class="card-header-custom documents">
+                <span><i class="fas fa-certificate section-icon"></i>مدارک</span>
+                <button type="button" class="btn btn-custom btn-sm" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
+                    <i class="fas fa-plus"></i> افزودن مدرک جدید
+                </button>
+            </div>
+            <div class="card-body-custom">
+                {% if user.documents.exists %}
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>نام مدرک</th>
+                                <th>محل آموزش</th>
+                                <th>نوع آموزش</th>
+                                <th>تاریخ شروع</th>
+                                <th>تاریخ پایان</th>
+                                <th>ساعت آموزشی</th>
+                                <th>هزینه آموزشی (ریال)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in user.documents.all %}
+                            <tr>
+                                <td>{{ doc.name_document }}</td>
+                                <td>{{ doc.Training_location }}</td>
+                                <td>{{ doc.get_Type_of_training_display }}</td>
+                                <td>{{ doc.jinfo }}</td>
+                                <td>{{ doc.jinfo1}}</td>
+                                <td>{{ doc.Training_hours }}</td>
+                                <td>{{ doc.Training_costs }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-alt"></i>
+                    <p>هنوز مدرکی ثبت نشده است.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ماموریت‌ها -->
+        <div class="info-card table-section" id="missions-section">
+            <div class="card-header-custom missions">
+                <span><i class="fas fa-plane section-icon"></i>ماموریت‌ها</span>
+                <button type="button" class="btn btn-custom btn-sm" data-bs-toggle="modal" data-bs-target="#addMissionModal">
+                    <i class="fas fa-plus"></i> افزودن ماموریت جدید
+                </button>
+            </div>
+            <div class="card-body-custom">
+                {% if user.missions.exists %}
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>نوع ماموریت</th>
+                                <th>توضیحات(موضوع) ماموریت</th>
+                                <th>محل (مقصد) ماموریت</th>
+                                <th>تاریخ شروع</th>
+                                <th>بازه زمانی ماموریت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mission in user.missions.all %}
+                            <tr>
+                                <td>{{ mission.types_of_missions|default:"-" }}</td>
+                                <td>{{ mission.Mission_Description|default:"-" }}</td>
+                                <td>{{ mission.mission_location|default:"-" }}</td>
+                                <td>{{ mission.jinfo|default:"-" }}</td>
+                                <td>{{ mission.time_frame|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-suitcase"></i>
+                    <p>هنوز ماموریتی ثبت نشده است.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- نتایج -->
+        <div class="info-card table-section" id="results-section">
+            <div class="card-header-custom results">
+                <span><i class="fas fa-chart-line section-icon"></i>نتایج و گزارش‌ها</span>
+                <button type="button" class="btn btn-custom btn-sm" data-bs-toggle="modal" data-bs-target="#addResultModal">
+                    <i class="fas fa-plus"></i> افزودن نتیجه جدید
+                </button>
+            </div>
+            <div class="card-body-custom">
+                {% if results %}
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>تاریخ تحویل</th>
+                                <th>جلسات داخلی</th>
+                                <th>صورت جلسات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr>
+                                <td>{{ result.Date_of_submission|date:"Y/m/d" }}</td>
+                                <td>{{ result.Internal_meetings }}</td>
+                                <td>{{ result.Meeting_Minutes }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>هنوز نتیجه‌ای ثبت نشده است.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن مدرک -->
+<div class="modal fade" id="addDocumentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-certificate me-2"></i>افزودن مدرک جدید</h5>
+                <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'add_document' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ document_form.name_document.label }}</label>
+                        {{ document_form.name_document }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ document_form.Training_location.label }}</label>
+                        {{ document_form.Training_location }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ document_form.Type_of_training.label }}</label>
+                        {{ document_form.Type_of_training }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ document_form.start_date.label }}</label>
+                            {{ document_form.start_date }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ document_form.end_date.label }}</label>
+                            {{ document_form.end_date }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ document_form.Training_hours.label }}</label>
+                            {{ document_form.Training_hours }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ document_form.Training_costs.label }}</label>
+                            {{ document_form.Training_costs }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-custom">ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن ماموریت -->
+<div class="modal fade" id="addMissionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plane me-2"></i>افزودن ماموریت جدید</h5>
+                <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'add_mission' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ mission_form.types_of_missions.label }}</label>
+                        {{ mission_form.types_of_missions }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ mission_form.mission_location.label }}</label>
+                            {{ mission_form.mission_location }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ mission_form.mission_origin.label }}</label>
+                            {{ mission_form.mission_origin }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ mission_form.Mission_Description.label }}</label>
+                        {{ mission_form.Mission_Description }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ mission_form.jinfo.label }}</label>
+                            {{ mission_form.jinfo }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ mission_form.end_date.label }}</label>
+                            {{ mission_form.end_date }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-custom">ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن نتیجه -->
+<div class="modal fade" id="addResultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-chart-line me-2"></i>افزودن نتیجه جدید</h5>
+                <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'add_result' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ result_form.Internal_meetings.label }}</label>
+                        {{ result_form.Internal_meetings }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ result_form.Meeting_Minutes.label }}</label>
+                        {{ result_form.Meeting_Minutes }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-custom">ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableSelector = document.getElementById('tableSelector');
+    const tableSections = document.querySelectorAll('.table-section');
+    
+    // Hide all table sections initially
+    tableSections.forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Handle dropdown change
+    tableSelector.addEventListener('change', function() {
+        const selectedValue = this.value;
+        
+        // Hide all sections first
+        tableSections.forEach(section => {
+            section.style.display = 'none';
+            section.classList.remove('active');
+        });
+        
+        // Show selected section
+        if (selectedValue) {
+            const selectedSection = document.getElementById(selectedValue + '-section');
+            if (selectedSection) {
+                selectedSection.style.display = 'block';
+                selectedSection.classList.add('active');
+                
+                // Smooth scroll to the selected section
+                selectedSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}

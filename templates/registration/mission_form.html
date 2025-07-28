@@ -1,0 +1,307 @@
+{% extends 'registration/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin: 20px 0;
+    }
+    
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #007bff;
+    }
+    
+    .form-header h2 {
+        color: #007bff;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,123,255,0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+    
+    .required {
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 5px 0 0 0;
+    }
+    
+    .errorlist li {
+        color: #dc3545;
+        font-size: 12px;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 4px;
+        padding: 5px 10px;
+        margin-top: 5px;
+    }
+    
+    .form-actions {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .form-actions .btn {
+        margin: 0 10px;
+        min-width: 120px;
+    }
+    
+    /* RTL Support */
+    .form-control, .form-group label {
+        text-align: right;
+        direction: rtl;
+    }
+    
+    select[multiple] {
+        min-height: 120px;
+    }
+    
+    .select-help {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>
+                        {% if mission %}
+                            <i class="fas fa-edit"></i>
+                        {% else %}
+                            <i class="fas fa-plus-circle"></i>
+                        {% endif %}
+                        {{ title }}
+                    </h2>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.types_of_missions.id_for_label }}">
+                                    {{ form.types_of_missions.label }}
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.types_of_missions }}
+                                {% if form.types_of_missions.help_text %}
+                                    <div class="help-text">{{ form.types_of_missions.help_text }}</div>
+                                {% endif %}
+                                {{ form.types_of_missions.errors }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.mission_location.id_for_label }}">
+                                    {{ form.mission_location.label }}
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.mission_location }}
+                                {% if form.mission_location.help_text %}
+                                    <div class="help-text">{{ form.mission_location.help_text }}</div>
+                                {% endif %}
+                                {{ form.mission_location.errors }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.Mission_Description.id_for_label }}">
+                            {{ form.Mission_Description.label }}
+                            <span class="required">*</span>
+                        </label>
+                        {{ form.Mission_Description }}
+                        {% if form.Mission_Description.help_text %}
+                            <div class="help-text">{{ form.Mission_Description.help_text }}</div>
+                        {% endif %}
+                        {{ form.Mission_Description.errors }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.start_date.id_for_label }}">
+                                    {{ form.start_date.label }}
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.start_date }}
+                                {% if form.start_date.help_text %}
+                                    <div class="help-text">{{ form.start_date.help_text }}</div>
+                                {% endif %}
+                                {{ form.start_date.errors }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.time_frame.id_for_label }}">
+                                    {{ form.time_frame.label }}
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.time_frame }}
+                                {% if form.time_frame.help_text %}
+                                    <div class="help-text">{{ form.time_frame.help_text }}</div>
+                                {% endif %}
+                                {{ form.time_frame.errors }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.PersonalInfo.id_for_label }}">
+                            {{ form.PersonalInfo.label }}
+                            <span class="required">*</span>
+                        </label>
+                        {{ form.PersonalInfo }}
+                        <div class="select-help">
+                            برای انتخاب چندین نفر، کلید Ctrl (یا Cmd در Mac) را نگه دارید و روی نام‌ها کلیک کنید.
+                        </div>
+                        {% if form.PersonalInfo.help_text %}
+                            <div class="help-text">{{ form.PersonalInfo.help_text }}</div>
+                        {% endif %}
+                        {{ form.PersonalInfo.errors }}
+                    </div>
+                    
+                    <!-- نمایش خطاهای کلی فرم -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            ذخیره ماموریت
+                        </button>
+                        <a href="{% url 'account:missions_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            انصراف
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // اضافه کردن انیمیشن به فرم
+    $('.form-container').hide().fadeIn(500);
+    
+    // بهبود تجربه کاربری برای فیلدهای تاریخ
+    $('input[type="date"]').on('focus', function() {
+        $(this).addClass('focused');
+    }).on('blur', function() {
+        $(this).removeClass('focused');
+    });
+    
+    // اعتبارسنجی سمت کلاینت
+    $('form').on('submit', function(e) {
+        var isValid = true;
+        var requiredFields = $(this).find('[required]');
+        
+        requiredFields.each(function() {
+            if (!$(this).val()) {
+                isValid = false;
+                $(this).addClass('is-invalid');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('لطفاً تمام فیلدهای الزامی را پر کنید.');
+        }
+    });
+    
+    // حذف کلاس خطا هنگام تایپ
+    $('input, textarea, select').on('input change', function() {
+        $(this).removeClass('is-invalid');
+    });
+});
+</script>
+{% endblock %}

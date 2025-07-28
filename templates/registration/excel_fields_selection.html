@@ -1,0 +1,221 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   انتخاب فیلدهای خروجی Excel
+{% endblock %}
+
+{% block main %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card card-outline card-primary">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-file-excel"></i> 
+            انتخاب فیلدهای خروجی Excel
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            فیلدهایی که می‌خواهید در فایل Excel نمایش داده شود را انتخاب کنید.
+          </div>
+          
+          <form method="POST" action="{% url 'account:generate_excel' %}">
+            {% csrf_token %}
+            
+            <!-- حفظ پارام��رهای جستجو و فیلتر -->
+            {% if search_query %}
+              <input type="hidden" name="search" value="{{ search_query }}">
+            {% endif %}
+            {% if brand_search %}
+              <input type="hidden" name="brand_search" value="{{ brand_search }}">
+            {% endif %}
+            {% if serial_search %}
+              <input type="hidden" name="serial_search" value="{{ serial_search }}">
+            {% endif %}
+            {% if code_search %}
+              <input type="hidden" name="code_search" value="{{ code_search }}">
+            {% endif %}
+            {% if holder_search %}
+              <input type="hidden" name="holder_search" value="{{ holder_search }}">
+            {% endif %}
+            {% if type_filter %}
+              <input type="hidden" name="type_filter" value="{{ type_filter }}">
+            {% endif %}
+            {% if status_filter %}
+              <input type="hidden" name="status_filter" value="{{ status_filter }}">
+            {% endif %}
+            {% if sub_status_filter %}
+              <input type="hidden" name="sub_status_filter" value="{{ sub_status_filter }}">
+            {% endif %}
+            
+            <div class="row">
+              <div class="col-md-6">
+                <h5><i class="fas fa-list"></i> فیلدهای اصلی</h5>
+                <div class="form-group">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_row_number" name="selected_fields" value="row_number" checked>
+                    <label class="custom-control-label" for="field_row_number">ردیف</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_name" name="selected_fields" value="name" checked>
+                    <label class="custom-control-label" for="field_name">نام کالا</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_type" name="selected_fields" value="type" checked>
+                    <label class="custom-control-label" for="field_type">نوع کالا</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_brand" name="selected_fields" value="brand" checked>
+                    <label class="custom-control-label" for="field_brand">برند</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_configuration" name="selected_fields" value="configuration">
+                    <label class="custom-control-label" for="field_configuration">پیکربندی</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_status" name="selected_fields" value="status" checked>
+                    <label class="custom-control-label" for="field_status">وضعیت کالا</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_sub_status" name="selected_fields" value="sub_status">
+                    <label class="custom-control-label" for="field_sub_status">زیر وضعیت</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <h5><i class="fas fa-id-card"></i> فیلدهای شناسایی و اطلاعات</h5>
+                <div class="form-group">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_serial" name="selected_fields" value="serial" checked>
+                    <label class="custom-control-label" for="field_serial">شماره سریال</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_product_code" name="selected_fields" value="product_code" checked>
+                    <label class="custom-control-label" for="field_product_code">کد محصول</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_holder" name="selected_fields" value="holder" checked>
+                    <label class="custom-control-label" for="field_holder">دارنده حساب</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_register_date" name="selected_fields" value="register_date">
+                    <label class="custom-control-label" for="field_register_date">تاریخ ثبت</label>
+                  </div>
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="field_update_date" name="selected_fields" value="update_date">
+                    <label class="custom-control-label" for="field_update_date">تاریخ بروزرسانی</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <button type="button" class="btn btn-secondary btn-sm" id="select_all">
+                        <i class="fas fa-check-square"></i> انتخاب همه
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm ml-2" id="deselect_all">
+                        <i class="fas fa-square"></i> لغو انتخاب همه
+                      </button>
+                    </div>
+                    <small class="text-muted">
+                      <span id="selected_count">0</span> فیلد انتخاب شده
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-12">
+                <div class="alert alert-warning">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <strong>توجه:</strong> حداقل یک فیلد باید انتخاب شود. فیلدهای انتخاب شده به ترتیب نمایش در بالا در Excel قرار خواهند گرفت.
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <div class="d-flex justify-content-between">
+                    <a href="{% url 'account:home' %}{% if search_query or brand_search or serial_search or code_search or holder_search or type_filter or status_filter or sub_status_filter %}?{% if search_query %}search={{ search_query }}{% endif %}{% if brand_search %}{% if search_query %}&{% endif %}brand_search={{ brand_search }}{% endif %}{% if serial_search %}{% if search_query or brand_search %}&{% endif %}serial_search={{ serial_search }}{% endif %}{% if code_search %}{% if search_query or brand_search or serial_search %}&{% endif %}code_search={{ code_search }}{% endif %}{% if holder_search %}{% if search_query or brand_search or serial_search or code_search %}&{% endif %}holder_search={{ holder_search }}{% endif %}{% if type_filter %}{% if search_query or brand_search or serial_search or code_search or holder_search %}&{% endif %}type_filter={{ type_filter }}{% endif %}{% if status_filter %}{% if search_query or brand_search or serial_search or code_search or holder_search or type_filter %}&{% endif %}status_filter={{ status_filter }}{% endif %}{% if sub_status_filter %}{% if search_query or brand_search or serial_search or code_search or holder_search or type_filter or status_filter %}&{% endif %}sub_status_filter={{ sub_status_filter }}{% endif %}{% endif %}" class="btn btn-secondary">
+                      <i class="fas fa-arrow-left"></i> بازگشت به لیست
+                    </a>
+                    <button type="submit" class="btn btn-success" id="generate_excel">
+                      <i class="fas fa-file-excel"></i> تولید فایل Excel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const checkboxes = document.querySelectorAll('input[name="selected_fields"]');
+      const selectAllBtn = document.getElementById('select_all');
+      const deselectAllBtn = document.getElementById('deselect_all');
+      const selectedCountSpan = document.getElementById('selected_count');
+      const generateBtn = document.getElementById('generate_excel');
+      
+      // تابع شمارش فیلدهای انتخاب شده
+      function updateSelectedCount() {
+        const selectedCount = document.querySelectorAll('input[name="selected_fields"]:checked').length;
+        selectedCountSpan.textContent = selectedCount;
+        
+        // غیرفعال کردن دکمه تولید اگر هیچ فیلدی انتخاب نشده
+        generateBtn.disabled = selectedCount === 0;
+        if (selectedCount === 0) {
+          generateBtn.classList.add('disabled');
+        } else {
+          generateBtn.classList.remove('disabled');
+        }
+      }
+      
+      // انتخاب همه
+      selectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = true;
+        });
+        updateSelectedCount();
+      });
+      
+      // لغو انتخاب همه
+      deselectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = false;
+        });
+        updateSelectedCount();
+      });
+      
+      // رویداد تغییر checkbox ها
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+      });
+      
+      // اجرای اولی��
+      updateSelectedCount();
+      
+      // اعتبارسنجی فرم
+      document.querySelector('form').addEventListener('submit', function(e) {
+        const selectedCount = document.querySelectorAll('input[name="selected_fields"]:checked').length;
+        if (selectedCount === 0) {
+          e.preventDefault();
+          alert('لطفاً حداقل یک فیلد را انتخاب کنید.');
+        }
+      });
+    });
+  </script>
+{% endblock %}

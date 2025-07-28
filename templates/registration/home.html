@@ -1,0 +1,837 @@
+{% extends 'registration/base.html' %}
+{% load form_tags %}
+
+{% block title %}
+   لیست کالاها
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="alert alert-info">
+        <h5><i class="icon fas fa-info"></i> خوش آمدید {{ user.get_full_name }}</h5>
+        در این بخش میتوانید لیست کامل کالاها را مشاهده و مدیریت کنید.
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-3">
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-info">
+        <div class="inner">
+          <h3>{{ total_items|default:0 }}</h3>
+          <p>کل کالاها</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-boxes"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-success">
+        <div class="inner">
+          <h3>{{ technical_items|default:0 }}</h3>
+          <p>کالاهای فنی</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-cogs"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-warning">
+        <div class="inner">
+          <h3>{{ non_technical_items|default:0 }}</h3>
+          <p>کالاهای غیر فنی</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-box"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-danger">
+        <div class="inner">
+          <h3>{{ pending_change_requests|default:0 }}</h3>
+          <p>درخواست‌های تایید</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <a href="{% url 'account:change_requests_list' %}" class="small-box-footer">
+          مشاهده <i class="fas fa-arrow-circle-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Section -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card card-outline card-primary">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-search"></i> جستجوی پیشرفته کالا</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="GET" id="searchForm">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="search">جستجو در نام کالا:</label>
+                  <input type="text" name="search" id="search" class="form-control" placeholder="نام کالا را وارد کنید..." value="{{ search_query }}">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="brand_search">جستجو در برند:</label>
+                  <input type="text" name="brand_search" id="brand_search" class="form-control" placeholder="برند کالا را وارد کنید..." value="{{ request.GET.brand_search }}">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="serial_search">شماره سریال:</label>
+                  <input type="text" name="serial_search" id="serial_search" class="form-control" placeholder="شماره سریال..." value="{{ request.GET.serial_search }}">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="code_search">کد محصول:</label>
+                  <input type="text" name="code_search" id="code_search" class="form-control" placeholder="کد محصول..." value="{{ request.GET.code_search }}">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="holder_search">دارنده حساب:</label>
+                  <input type="text" name="holder_search" id="holder_search" class="form-control" placeholder="نام، نام خانوادگی یا شماره پرسنلی..." value="{{ request.GET.holder_search }}">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <button type="submit" class="btn btn-primary mr-2">
+                        <i class="fas fa-search"></i> جستجو
+                      </button>
+                      {% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search %}
+                        <a href="?{% if request.GET.type_filter %}type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}{% if request.GET.type_filter %}&{% endif %}status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}{% if request.GET.type_filter or request.GET.status_filter %}&{% endif %}sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}" class="btn btn-secondary">
+                          <i class="fas fa-times"></i> پاک کردن جستجو
+                        </a>
+                      {% endif %}
+                    </div>
+                    <small class="text-muted align-self-center">
+                      <i class="fas fa-info-circle"></i> 
+                      می‌توانید در چندین فیلد همزمان جستجو کنید
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- حفظ فیلترهای موجود -->
+            {% if request.GET.type_filter %}
+              <input type="hidden" name="type_filter" value="{{ request.GET.type_filter }}">
+            {% endif %}
+            {% if request.GET.status_filter %}
+              <input type="hidden" name="status_filter" value="{{ request.GET.status_filter }}">
+            {% endif %}
+            {% if request.GET.sub_status_filter %}
+              <input type="hidden" name="sub_status_filter" value="{{ request.GET.sub_status_filter }}">
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card card-outline card-info">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-filter"></i> فیلتر بر اساس نوع و وضعیت</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="GET" id="filterForm">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="type_filter">نوع کالا:</label>
+                  <select name="type_filter" id="type_filter" class="form-control">
+                    <option value="">همه انواع</option>
+                    <option value="Technical" {% if request.GET.type_filter == 'Technical' %}selected{% endif %}>فنی</option>
+                    <option value="Non-technical" {% if request.GET.type_filter == 'Non-technical' %}selected{% endif %}>غیر فنی</option>
+                  </select>
+                  <!-- حفظ جستجوی موجود -->
+                  {% if search_query %}
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                  {% endif %}
+                  {% if request.GET.brand_search %}
+                    <input type="hidden" name="brand_search" value="{{ request.GET.brand_search }}">
+                  {% endif %}
+                  {% if request.GET.serial_search %}
+                    <input type="hidden" name="serial_search" value="{{ request.GET.serial_search }}">
+                  {% endif %}
+                  {% if request.GET.code_search %}
+                    <input type="hidden" name="code_search" value="{{ request.GET.code_search }}">
+                  {% endif %}
+                  {% if request.GET.holder_search %}
+                    <input type="hidden" name="holder_search" value="{{ request.GET.holder_search }}">
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="status_filter">وضعیت کالا:</label>
+                  <select name="status_filter" id="status_filter" class="form-control">
+                    <option value="">همه وضعیت‌ها</option>
+                    <option value="hardware" {% if request.GET.status_filter == 'hardware' %}selected{% endif %}>سخت افزار (تعمیری)</option>
+                    <option value="Delivery" {% if request.GET.status_filter == 'Delivery' %}selected{% endif %}>تحویل</option>
+                    <option value="warehouse" {% if request.GET.status_filter == 'warehouse' %}selected{% endif %}>انبار</option>
+                  </select>
+                  <!-- حفظ جستجوی موجود -->
+                  {% if search_query %}
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="sub_status_filter">زیر وضعیت:</label>
+                  <select name="sub_status_filter" id="sub_status_filter" class="form-control" disabled>
+                    <option value="">انتخاب زیر وضعیت</option>
+                  </select>
+                  <!-- حفظ جستجوی موجود -->
+                  {% if search_query %}
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>&nbsp;</label>
+                  <div class="d-flex">
+                    <button type="submit" class="btn btn-info mr-2">
+                      <i class="fas fa-filter"></i> اعمال فیلتر
+                    </button>
+                    <a href="?{% if search_query %}search={{ search_query }}{% endif %}" class="btn btn-secondary">
+                      <i class="fas fa-times"></i> پاک کردن فیلتر
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">جدول کالاها</h3>
+          <div class="card-tools">
+            <a href="{% url 'account:change_requests_list' %}" class="btn btn-warning btn-sm">
+              <i class="fas fa-exclamation-triangle"></i>
+              درخواست‌های تایید ({{ pending_change_requests|default:0 }})
+            </a>
+          </div>
+        </div>
+        <!-- /.card-header -->
+        <div class="card-body p-0">
+          <style>
+            .table th:nth-child(3), .table td:nth-child(3) { 
+              width: 100px; 
+              max-width: 100px; 
+              word-wrap: break-word; 
+              white-space: normal;
+            }
+            .table th:nth-child(6), .table td:nth-child(6) { 
+              width: 120px; 
+              max-width: 120px; 
+              word-wrap: break-word; 
+              white-space: normal;
+            }
+          </style>
+          
+          <!-- فرم انتقال دسته‌ای -->
+          <div class="p-3 border-bottom bg-light">
+            <form id="bulkTransferForm" method="post" action="{% url 'account:bulk_transfer_items' %}">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group mb-2">
+                    <label for="to_person" class="form-label">انتقال کالاهای انتخاب شده به:</label>
+                    <select name="to_person" id="to_person" class="form-control form-control-sm" required>
+                      <option value="">انتخاب شخص مقصد...</option>
+                      {% for person in all_people %}
+                        <option value="{{ person.Personnel_number }}">
+                          {{ person.name }} {{ person.family }} ({{ person.Personnel_number }})
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group mb-2">
+                    <label for="description" class="form-label">توضیحات (اختیاری):</label>
+                    <input type="text" name="description" id="description" class="form-control form-control-sm" placeholder="دلیل انتقال...">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-12">
+                  <button type="submit" class="btn btn-primary btn-sm" id="bulkTransferBtn" disabled>
+                    <i class="fas fa-exchange-alt"></i> انتقال کالاهای انتخاب شده
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllItems()">
+                    <i class="fas fa-check-square"></i> انتخاب همه
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="deselectAllItems()">
+                    <i class="fas fa-square"></i> لغو انتخاب همه
+                  </button>
+                  <span id="selectedCount" class="ml-3 text-muted">0 کالا انتخاب شده</span>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>
+                  <input type="checkbox" id="selectAll" onchange="toggleAllItems()">
+                </th>
+                <th>ردیف</th>
+                <th style="cursor: pointer; user-select: none;" onclick="sortTable('name')" title="کلیک کنید تا مرتب شود">
+                  نام کالا
+                  <i class="fas fa-sort ml-1" id="name-sort-icon"></i>
+                </th>
+                <th>نوع کالا</th>
+                <th>برند</th>
+                <th>پیکربندی</th>
+                <th>وضعیت کالا</th>
+                <th>شماره سریال</th>
+                <th>کد محصول</th>
+                <th>دارنده حساب</th>
+                <th style="cursor: pointer; user-select: none;" onclick="sortTable('date')" title="کلیک کنید تا مرتب شود">
+                  تاریخ ثبت
+                  <i class="fas fa-sort ml-1" id="date-sort-icon"></i>
+                </th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for item in object_list %}
+                  <tr>
+                      <td>
+                        <input type="checkbox" name="selected_items" value="{{ item.id }}" class="item-checkbox" onchange="updateSelectedCount()">
+                      </td>
+                      <td>{{ forloop.counter }}</td>
+                      <td>
+                        {% if item.Technical_items %}
+                          {{ item.Technical_items }}
+                        {% else %}
+                          <span class="text-muted">تعریف نشده</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.type_Item == 'Technical' %}
+                          <span class="badge badge-primary">فنی</span>
+                        {% elif item.type_Item == 'Non-technical' %}
+                          <span class="badge badge-secondary">غیر فنی</span>
+                        {% else %}
+                          <span class="badge badge-light">نامشخص</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.brand %}
+                          <strong>{{ item.brand }}</strong>
+                        {% else %}
+                          <span class="text-muted">تعریف نشده</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.Configuration %}
+                          <small class="text-info">{{ item.Configuration }}</small>
+                        {% else %}
+                          <span class="text-muted">ندارد</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.status_item == 'hardware' %}
+                          <span class="badge badge-warning">سخت افزار (تعمیری)</span>
+                        {% elif item.status_item == 'Delivery' %}
+                          <span class="badge badge-info">تحویل</span>
+                        {% elif item.status_item == 'warehouse' %}
+                          <span class="badge badge-success">انبار</span>
+                        {% else %}
+                          <span class="badge badge-light">{{ item.get_status_item_display|default:"نامشخص" }}</span>
+                        {% endif %}
+                        {% if item.status_sub_item %}
+                          <br><small class="text-muted">{{ item.get_status_sub_item_display }}</small>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.serial_number %}
+                          <code>{{ item.serial_number }}</code>
+                        {% else %}
+                          <span class="text-muted">ندارد</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.Product_code %}
+                          <code>{{ item.Product_code }}</code>
+                        {% else %}
+                          <span class="text-muted">ندارد</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.PersonalInfo %}
+                          <strong>{{ item.PersonalInfo.name }} {{ item.PersonalInfo.family }}</strong>
+                          <br>
+                          <small class="text-muted">{{ item.PersonalInfo.Personnel_number }}</small>
+                        {% else %}
+                          <span class="text-muted">بدون دارنده</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <small>{{ item.jinfo }}</small>
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                          <a href="{% url 'account:item_detail' item.pk %}" class="btn btn-info btn-sm" title="مشاهده جزئیات">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          <a href="{% url 'account:item_edit' item.pk %}" class="btn btn-warning btn-sm" title="ویرایش">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="{% url 'account:item_delete' item.pk %}" class="btn btn-danger btn-sm" title="حذف" onclick="return confirm('آیا مطمئن هستید؟')">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="12" class="text-center text-muted py-4">
+                      <i class="fas fa-box-open fa-2x mb-2"></i>
+                      <br>
+                      هیچ کالایی یافت نشد
+                    </td>
+                  </tr>
+                {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <!-- /.card-body -->
+        <div class="card-footer clearfix">
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="dataTables_info">
+                {% if is_paginated %}
+                  نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ paginator.count }} کالا
+                {% else %}
+                  نمایش {{ object_list|length }} کالا
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-sm-6">
+              {% if is_paginated %}
+                <ul class="pagination pagination-sm m-0 float-right">
+                  {% if page_obj.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.type_filter %}&type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}&sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}">«</a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.type_filter %}&type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}&sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}">‹</a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled"><a class="page-link" href="#">«</a></li>
+                    <li class="page-item disabled"><a class="page-link" href="#">‹</a></li>
+                  {% endif %}
+
+                  {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                      <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.type_filter %}&type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}&sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}">{{ num }}</a></li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if page_obj.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.type_filter %}&type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}&sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}">›</a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.type_filter %}&type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}&sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}">»</a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled"><a class="page-link" href="#">›</a></li>
+                    <li class="page-item disabled"><a class="page-link" href="#">»</a></li>
+                  {% endif %}
+                </ul>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.card -->
+    </div>
+  </div>
+
+  <!-- Additional Actions Row -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card card-outline card-primary">
+        <div class="card-header">
+          <h3 class="card-title">عملیات سریع</h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <a href="{% url 'account:export_excel_fields_selection' %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search or request.GET.type_filter or request.GET.status_filter or request.GET.sub_status_filter %}?{% if search_query %}search={{ search_query }}{% endif %}{% if request.GET.brand_search %}{% if search_query %}&{% endif %}brand_search={{ request.GET.brand_search }}{% endif %}{% if request.GET.serial_search %}{% if search_query or request.GET.brand_search %}&{% endif %}serial_search={{ request.GET.serial_search }}{% endif %}{% if request.GET.code_search %}{% if search_query or request.GET.brand_search or request.GET.serial_search %}&{% endif %}code_search={{ request.GET.code_search }}{% endif %}{% if request.GET.holder_search %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search %}&{% endif %}holder_search={{ request.GET.holder_search }}{% endif %}{% if request.GET.type_filter %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search %}&{% endif %}type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search or request.GET.type_filter %}&{% endif %}status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search or request.GET.type_filter or request.GET.status_filter %}&{% endif %}sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}{% endif %}" class="btn btn-block btn-outline-primary">
+                <i class="fas fa-cog"></i> خروجی Excel (انتخاب فیلدها)
+              </a>
+            </div>
+            <div class="col-md-3">
+              <a href="{% url 'account:export_pdf_fields_selection' %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search or request.GET.type_filter or request.GET.status_filter or request.GET.sub_status_filter %}?{% if search_query %}search={{ search_query }}{% endif %}{% if request.GET.brand_search %}{% if search_query %}&{% endif %}brand_search={{ request.GET.brand_search }}{% endif %}{% if request.GET.serial_search %}{% if search_query or request.GET.brand_search %}&{% endif %}serial_search={{ request.GET.serial_search }}{% endif %}{% if request.GET.code_search %}{% if search_query or request.GET.brand_search or request.GET.serial_search %}&{% endif %}code_search={{ request.GET.code_search }}{% endif %}{% if request.GET.holder_search %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search %}&{% endif %}holder_search={{ request.GET.holder_search }}{% endif %}{% if request.GET.type_filter %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search %}&{% endif %}type_filter={{ request.GET.type_filter }}{% endif %}{% if request.GET.status_filter %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search or request.GET.type_filter %}&{% endif %}status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.sub_status_filter %}{% if search_query or request.GET.brand_search or request.GET.serial_search or request.GET.code_search or request.GET.holder_search or request.GET.type_filter or request.GET.status_filter %}&{% endif %}sub_status_filter={{ request.GET.sub_status_filter }}{% endif %}{% endif %}" class="btn btn-block btn-outline-danger">
+                <i class="fas fa-file-pdf"></i> خروجی PDF (انتخاب فیلدها)
+              </a>
+            </div>
+            <div class="col-md-3">
+              <a href="{% url 'account:import_excel' %}" class="btn btn-block btn-outline-success">
+                <i class="fas fa-upload"></i> ورودی Excel
+              </a>
+            </div>
+            <div class="col-md-3">
+              <a href="{% url 'account:change_requests_list' %}" class="btn btn-block btn-outline-warning">
+                <i class="fas fa-exclamation-triangle"></i> درخواست‌های تایید
+              </a>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-md-12">
+              <div class="text-center">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle"></i> 
+                  فیلترهای اعمال شده در خروجی‌ها لحاظ می‌شود
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusFilter = document.getElementById('status_filter');
+      const subStatusFilter = document.getElementById('sub_status_filter');
+      
+      // تعریف زیر وضعیت‌ها بر اساس مدل موجود
+      const subStatuses = {
+        'hardware': [
+          {value: 'repair', text: 'تعمیر'},
+          {value: 'upgrade', text: 'ارتقا'}
+        ],
+        'Delivery': [
+          {value: 'external', text: 'خارج'},
+          {value: 'internal', text: 'داخل'}
+        ],
+        'warehouse': [
+          {value: 'ready', text: 'آماده بکار'},
+          {value: 'returned_good', text: 'عودتی سالم'},
+          {value: 'returned_worn', text: 'عودتی فرسوده'}
+        ]
+      };
+      
+      // تابع برای به‌روزرسانی زیر وضعیت‌ها
+      function updateSubStatuses() {
+        const selectedStatus = statusFilter.value;
+        
+        // پاک کردن گزینه‌های قبلی
+        subStatusFilter.innerHTML = '<option value="">انتخاب زیر وضعیت</option>';
+        
+        if (selectedStatus && subStatuses[selectedStatus]) {
+          // فعال کردن dropdown زیر وضعیت
+          subStatusFilter.disabled = false;
+          
+          // اضافه کردن گزینه‌های جدید
+          subStatuses[selectedStatus].forEach(function(subStatus) {
+            const option = document.createElement('option');
+            option.value = subStatus.value;
+            option.textContent = subStatus.text;
+            
+            // بررسی اینکه آیا این گزینه قبلاً انتخاب شده یا نه
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('sub_status_filter') === subStatus.value) {
+              option.selected = true;
+            }
+            
+            subStatusFilter.appendChild(option);
+          });
+        } else {
+          // غیرفعال کردن dropdown زیر وضعیت
+          subStatusFilter.disabled = true;
+        }
+      }
+      
+      // اجرای تابع در ابتدا برای حفظ وضعیت فعلی
+      updateSubStatuses();
+      
+      // اضافه کردن event listener برای تغییر وضعیت اصلی
+      statusFilter.addEventListener('change', updateSubStatuses);
+    });
+
+    // متغیرهای مرتب‌سازی
+    let currentSort = {
+      column: null,
+      direction: 'asc'
+    };
+
+    // تابع مرتب‌سازی جدول
+    function sortTable(column) {
+      const table = document.querySelector('.table tbody');
+      const rows = Array.from(table.querySelectorAll('tr')).filter(row => 
+        !row.querySelector('td[colspan]') && row.cells.length > 1
+      );
+      
+      if (rows.length === 0) return;
+      
+      // تعیین جهت مرتب‌سازی
+      if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+      }
+
+      // تعیین ستون مورد نظر برای مرتب‌سازی (با در نظر گیری checkbox)
+      let columnIndex;
+      if (column === 'name') {
+        columnIndex = 2; // ستون نام کالا (بعد از checkbox و ردیف)
+      } else if (column === 'date') {
+        columnIndex = 10; // ستون تاریخ ثبت
+      }
+
+      // مرتب‌سازی ردیف‌ها
+      rows.sort((a, b) => {
+        let aValue = a.cells[columnIndex].textContent.trim();
+        let bValue = b.cells[columnIndex].textContent.trim();
+
+        // برای ستون نام کالا
+        if (column === 'name') {
+          // حذف متن "تعریف نشده" برای مرتب‌سازی بهتر
+          if (aValue === 'تعریف نشده') aValue = '';
+          if (bValue === 'تعریف نشده') bValue = '';
+          
+          // مرتب‌سازی الفبایی فارسی
+          if (currentSort.direction === 'asc') {
+            return aValue.localeCompare(bValue, 'fa', { numeric: true, sensitivity: 'base' });
+          } else {
+            return bValue.localeCompare(aValue, 'fa', { numeric: true, sensitivity: 'base' });
+          }
+        }
+
+        // برای ستون تاریخ
+        if (column === 'date') {
+          // تبدیل تاریخ شمسی به قابل مقایسه
+          const aDate = convertPersianDateForSort(aValue);
+          const bDate = convertPersianDateForSort(bValue);
+          
+          if (currentSort.direction === 'asc') {
+            return aDate.localeCompare(bDate);
+          } else {
+            return bDate.localeCompare(aDate);
+          }
+        }
+      });
+
+      // پاک کردن جدول و اضافه کردن ردیف‌های مرتب شده
+      table.innerHTML = '';
+      rows.forEach((row, index) => {
+        // به‌روزرسانی شماره ردیف
+        row.cells[1].textContent = index + 1; // ستون ردیف بعد از checkbox
+        table.appendChild(row);
+      });
+
+      // به‌روزرسانی آیکون‌های مرتب‌سازی
+      updateSortIcons(column);
+    }
+
+    // تابع تبدیل تاریخ شمسی برای مرتب‌سازی
+    function convertPersianDateForSort(dateStr) {
+      // اگر تاریخ خالی یا نامعتبر باشد
+      if (!dateStr || dateStr.trim() === '') return '0000/00/00';
+      
+      // تبدیل اعداد فارسی به انگلیسی
+      const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+      const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      
+      let convertedDate = dateStr;
+      for (let i = 0; i < persianNumbers.length; i++) {
+        convertedDate = convertedDate.replace(new RegExp(persianNumbers[i], 'g'), englishNumbers[i]);
+      }
+      
+      // اگر تاریخ در فرمت مناسب نیست، آن را به فرمت قابل مقایسه تبدیل کن
+      // فرض می‌کنیم تاریخ در فرمت YYYY/MM/DD یا DD/MM/YYYY است
+      const datePattern = /(\d{4})\/(\d{1,2})\/(\d{1,2})/;
+      const match = convertedDate.match(datePattern);
+      
+      if (match) {
+        const [, year, month, day] = match;
+        // اطمینان از فرمت YYYY/MM/DD برای مقایسه
+        return `${year}/${month.padStart(2, '0')}/${day.padStart(2, '0')}`;
+      }
+      
+      return convertedDate;
+    }
+
+    // تابع به‌روزرسانی آیکون‌های مرتب‌سازی
+    function updateSortIcons(activeColumn) {
+      // ریست کردن همه آیکون‌ها
+      const nameIcon = document.getElementById('name-sort-icon');
+      const dateIcon = document.getElementById('date-sort-icon');
+      
+      if (nameIcon) nameIcon.className = 'fas fa-sort ml-1';
+      if (dateIcon) dateIcon.className = 'fas fa-sort ml-1';
+
+      // تنظیم آیکون ستون فعال
+      const activeIcon = document.getElementById(activeColumn + '-sort-icon');
+      if (activeIcon) {
+        if (currentSort.direction === 'asc') {
+          activeIcon.className = 'fas fa-sort-up ml-1 text-primary';
+        } else {
+          activeIcon.className = 'fas fa-sort-down ml-1 text-primary';
+        }
+      }
+    }
+
+    // اضافه کردن استایل hover برای ستون‌های قابل مرتب‌سازی
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortableHeaders = document.querySelectorAll('th[onclick]');
+      sortableHeaders.forEach(header => {
+        header.addEventListener('mouseenter', function() {
+          this.style.backgroundColor = '#f8f9fa';
+        });
+        header.addEventListener('mouseleave', function() {
+          this.style.backgroundColor = '';
+        });
+      });
+    });
+
+    // توابع انتقال دسته‌ای
+    function updateSelectedCount() {
+      const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+      const count = checkboxes.length;
+      const countElement = document.getElementById('selectedCount');
+      const transferBtn = document.getElementById('bulkTransferBtn');
+      
+      countElement.textContent = `${count} کالا انتخاب شده`;
+      transferBtn.disabled = count === 0;
+      
+      // بروزرسانی checkbox "انتخاب همه"
+      const selectAllCheckbox = document.getElementById('selectAll');
+      const allCheckboxes = document.querySelectorAll('.item-checkbox');
+      
+      if (count === 0) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = false;
+      } else if (count === allCheckboxes.length) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = true;
+      } else {
+        selectAllCheckbox.indeterminate = true;
+      }
+    }
+
+    function toggleAllItems() {
+      const selectAllCheckbox = document.getElementById('selectAll');
+      const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+      
+      itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+      });
+      
+      updateSelectedCount();
+    }
+
+    function selectAllItems() {
+      const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+      const selectAllCheckbox = document.getElementById('selectAll');
+      
+      itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = true;
+      });
+      selectAllCheckbox.checked = true;
+      
+      updateSelectedCount();
+    }
+
+    function deselectAllItems() {
+      const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+      const selectAllCheckbox = document.getElementById('selectAll');
+      
+      itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      selectAllCheckbox.checked = false;
+      
+      updateSelectedCount();
+    }
+
+    // تایید قبل از ارسال فرم انتقال دسته‌ای
+    document.getElementById('bulkTransferForm').addEventListener('submit', function(e) {
+      const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+      const toPerson = document.getElementById('to_person');
+      
+      if (selectedItems.length === 0) {
+        e.preventDefault();
+        alert('لطفاً حداقل یک کالا را انتخاب کنید.');
+        return;
+      }
+      
+      if (!toPerson.value) {
+        e.preventDefault();
+        alert('لطفاً شخص مقصد را انتخاب کنید.');
+        return;
+      }
+      
+      const confirmMessage = `آیا از انتقال ${selectedItems.length} کالا به ${toPerson.options[toPerson.selectedIndex].text} اطمینان دارید؟`;
+      
+      if (!confirm(confirmMessage)) {
+        e.preventDefault();
+      }
+    });
+  </script>
+{% endblock %}

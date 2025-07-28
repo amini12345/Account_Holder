@@ -1,0 +1,226 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+  {% if object %}
+    ویرایش کالا
+  {% else %}
+    افزودن کالای جدید
+  {% endif %}
+{% endblock %}
+
+{% block main %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">
+          {% if object %}
+            <i class="fas fa-edit"></i> ویرایش کالا
+          {% else %}
+            <i class="fas fa-plus"></i> افزودن کالای جدید
+          {% endif %}
+        </h3>
+      </div>
+      
+      <form method="post">
+        {% csrf_token %}
+        <div class="card-body">
+          {% if form.errors %}
+            <div class="alert alert-danger">
+              <h5><i class="icon fas fa-ban"></i>خطا</h5>
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.Technical_items.id_for_label }}">{{ form.Technical_items.label }}</label>
+                {{ form.Technical_items }}
+                {% if form.Technical_items.help_text %}
+                  <small class="form-text text-muted">{{ form.Technical_items.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.type_Item.id_for_label }}">{{ form.type_Item.label }}</label>
+                {{ form.type_Item }}
+                {% if form.type_Item.help_text %}
+                  <small class="form-text text-muted">{{ form.type_Item.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.brand.id_for_label }}">{{ form.brand.label }}</label>
+                {{ form.brand }}
+                {% if form.brand.help_text %}
+                  <small class="form-text text-muted">{{ form.brand.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.status_item.id_for_label }}">{{ form.status_item.label }}</label>
+                {{ form.status_item }}
+                {% if form.status_item.help_text %}
+                  <small class="form-text text-muted">{{ form.status_item.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.status_sub_item.id_for_label }}">{{ form.status_sub_item.label }}</label>
+                {{ form.status_sub_item }}
+                {% if form.status_sub_item.help_text %}
+                  <small class="form-text text-muted">{{ form.status_sub_item.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.PersonalInfo.id_for_label }}">{{ form.PersonalInfo.label }}</label>
+                {{ form.PersonalInfo }}
+                {% if form.PersonalInfo.help_text %}
+                  <small class="form-text text-muted">{{ form.PersonalInfo.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="{{ form.Configuration.id_for_label }}">{{ form.Configuration.label }}</label>
+                {{ form.Configuration }}
+                {% if form.Configuration.help_text %}
+                  <small class="form-text text-muted">{{ form.Configuration.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.serial_number.id_for_label }}">{{ form.serial_number.label }}</label>
+                {{ form.serial_number }}
+                {% if form.serial_number.help_text %}
+                  <small class="form-text text-muted">{{ form.serial_number.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.Product_code.id_for_label }}">{{ form.Product_code.label }}</label>
+                {{ form.Product_code }}
+                {% if form.Product_code.help_text %}
+                  <small class="form-text text-muted">{{ form.Product_code.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i>
+            {% if object %}
+              به‌روزرسانی
+            {% else %}
+              ذخیره
+            {% endif %}
+          </button>
+          <a href="{% url 'account:home' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> انصراف
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusItem = document.getElementById('id_status_item');
+    const statusSubItem = document.getElementById('id_status_sub_item');
+    
+    // تعریف گزینه‌های زیر مجموعه برای هر وضعیت
+    const statusSubMapping = {
+        'hardware': [
+            ['repair', 'تعمیر'],
+            ['upgrade', 'ارتقا']
+        ],
+        'Delivery': [
+            ['external', 'خارج'],
+            ['internal', 'داخل']
+        ],
+        'warehouse': [
+            ['ready', 'آماده بکار'],
+            ['returned_good', 'عودتی سالم'],
+            ['returned_worn', 'عودتی فرسوده']
+        ]
+    };
+    
+    function updateSubStatusOptions() {
+        const selectedStatus = statusItem.value;
+        
+        // پاک کردن گزینه‌های قبلی
+        statusSubItem.innerHTML = '<option value="">انتخاب کنید</option>';
+        
+        if (selectedStatus && statusSubMapping[selectedStatus]) {
+            statusSubMapping[selectedStatus].forEach(function(option) {
+                const optionElement = document.createElement('option');
+                optionElement.value = option[0];
+                optionElement.textContent = option[1];
+                statusSubItem.appendChild(optionElement);
+            });
+            statusSubItem.disabled = false;
+        } else {
+            statusSubItem.disabled = true;
+        }
+    }
+    
+    // اجرای تابع در ابتدا
+    updateSubStatusOptions();
+    
+    // اضافه کردن event listener
+    statusItem.addEventListener('change', updateSubStatusOptions);
+});
+</script>
+
+<style>
+.form-control, .form-control:focus {
+  border-radius: 0.25rem;
+}
+
+.card {
+  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.btn {
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+</style>
+{% endblock %}

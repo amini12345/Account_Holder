@@ -1,0 +1,323 @@
+{% extends 'registration/base.html' %}
+{% load static %}
+
+{% block title %}تاریخچه تغییرات کالاها{% endblock %}
+
+{% block content %}
+<div class="content-wrapper" style="direction: rtl;">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">تاریخچه تغییرات کالاها</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-left">
+                        <li class="breadcrumb-item"><a href="{% url 'account:home' %}">خانه</a></li>
+                        <li class="breadcrumb-item active">تاریخچه تغییرات</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- لیست کالاها -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">انتخاب کالا</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- جستجو و فیلتر -->
+                            <form method="get" class="mb-3">
+                                <!-- جستجو -->
+                                <div class="input-group mb-2">
+                                    <input type="text" name="search" class="form-control" 
+                                           placeholder="جستجو در کالاها..." value="{{ search_query }}">
+                                    {% if selected_item_id %}
+                                        <input type="hidden" name="item_id" value="{{ selected_item_id }}">
+                                    {% endif %}
+                                    {% if type_filter %}
+                                        <input type="hidden" name="type_filter" value="{{ type_filter }}">
+                                    {% endif %}
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- فیلتر نوع کالا -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="btn-group btn-group-sm w-100" role="group">
+                                            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_item_id %}item_id={{ selected_item_id }}{% endif %}" 
+                                               class="btn {% if not type_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                                همه ({{ total_items }})
+                                            </a>
+                                            <a href="?type_filter=Technical{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_item_id %}&item_id={{ selected_item_id }}{% endif %}" 
+                                               class="btn {% if type_filter == 'Technical' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                                فنی ({{ technical_items }})
+                                            </a>
+                                            <a href="?type_filter=Non-technical{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_item_id %}&item_id={{ selected_item_id }}{% endif %}" 
+                                               class="btn {% if type_filter == 'Non-technical' %}btn-info{% else %}btn-outline-info{% endif %}">
+                                                غیر فنی ({{ non_technical_items }})
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- لیست کالاها -->
+                            <div class="list-group" style="max-height: 500px; overflow-y: auto;">
+                                {% for item in items %}
+                                    <a href="?item_id={{ item.id }}{% if search_query %}&search={{ search_query }}{% endif %}{% if type_filter %}&type_filter={{ type_filter }}{% endif %}" 
+                                       class="list-group-item list-group-item-action {% if selected_item and selected_item.id == item.id %}active{% endif %}">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ item.Technical_items|default:"بدون نام" }}</h6>
+                                            <small class="text-muted">
+                                                <span class="badge badge-{% if item.type_Item == 'Technical' %}success{% else %}info{% endif %}">
+                                                    {{ item.get_type_Item_display }}
+                                                </span>
+                                            </small>
+                                        </div>
+                                        <p class="mb-1">
+                                            {% if item.serial_number %}
+                                                <small><strong>سریال:</strong> {{ item.serial_number }}</small><br>
+                                            {% endif %}
+                                            {% if item.Product_code %}
+                                                <small><strong>کد:</strong> {{ item.Product_code }}</small><br>
+                                            {% endif %}
+                                            {% if item.PersonalInfo %}
+                                                <small><strong>مالک:</strong> {{ item.PersonalInfo.name }} {{ item.PersonalInfo.family }}</small>
+                                            {% else %}
+                                                <small><strong>مالک:</strong> بدون مالک</small>
+                                            {% endif %}
+                                        </p>
+                                        <small class="text-muted">وضعیت: {{ item.get_status_item_display }}</small>
+                                    </a>
+                                {% empty %}
+                                    <div class="text-center text-muted py-3">
+                                        <i class="fas fa-box-open fa-2x mb-2"></i>
+                                        <p>کالایی یافت نشد</p>
+                                        {% if type_filter or search_query %}
+                                            <a href="{% url 'account:history' %}" class="btn btn-sm btn-outline-primary">
+                                                نمایش همه کالاها
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تاریخچه کالای انتخاب شده -->
+                <div class="col-md-8">
+                    {% if selected_item %}
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-history"></i>
+                                    تاریخچه کالا: {{ selected_item.Technical_items|default:"بدون نام" }}
+                                    <span class="badge badge-{% if selected_item.type_Item == 'Technical' %}success{% else %}info{% endif %} ml-2">
+                                        {{ selected_item.get_type_Item_display }}
+                                    </span>
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <!-- اطلاعات کالا -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <strong>نام کالا:</strong> {{ selected_item.Technical_items|default:"---" }}<br>
+                                        <strong>نوع:</strong> 
+                                        <span class="badge badge-{% if selected_item.type_Item == 'Technical' %}success{% else %}info{% endif %}">
+                                            {{ selected_item.get_type_Item_display }}
+                                        </span><br>
+                                        <strong>وضعیت:</strong> <span class="badge badge-info">{{ selected_item.get_status_item_display }}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>شماره سریال:</strong> {{ selected_item.serial_number|default:"---" }}<br>
+                                        <strong>کد محصول:</strong> {{ selected_item.Product_code|default:"---" }}<br>
+                                        <strong>مالک فعلی:</strong> 
+                                        {% if selected_item.PersonalInfo %}
+                                            {{ selected_item.PersonalInfo.name }} {{ selected_item.PersonalInfo.family }}
+                                        {% else %}
+                                            بدون مالک
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <!-- تاریخچه -->
+                                <h5><i class="fas fa-clock"></i> تاریخچه تغییرات</h5>
+                                {% if item_history %}
+                                    <div class="timeline">
+                                        {% for history in item_history %}
+                                            <div class="time-label">
+                                                <span class="bg-info">{{ history.jinfo }}</span>
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-{% if history.action_type == 'assign' %}user-plus{% elif history.action_type == 'transfer' %}exchange-alt{% elif history.action_type == 'return' %}undo{% elif history.action_type == 'maintenance' %}tools{% else %}cog{% endif %} bg-{% if history.action_type == 'assign' %}success{% elif history.action_type == 'transfer' %}primary{% elif history.action_type == 'return' %}warning{% elif history.action_type == 'maintenance' %}danger{% else %}secondary{% endif %}"></i>
+                                                <div class="timeline-item">
+                                                    <span class="time">
+                                                        <i class="fas fa-clock"></i> {{ history.action_date|date:"H:i" }}
+                                                    </span>
+                                                    <h3 class="timeline-header">
+                                                        <strong>{{ history.get_action_type_display }}</strong>
+                                                    </h3>
+                                                    <div class="timeline-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <strong>از:</strong> 
+                                                                {% if history.from_person %}
+                                                                    {{ history.from_person.name }} {{ history.from_person.family }}
+                                                                {% else %}
+                                                                    انبار/سیستم
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <strong>به:</strong> 
+                                                                {% if history.to_person %}
+                                                                    {{ history.to_person.name }} {{ history.to_person.family }}
+                                                                {% else %}
+                                                                    انبار/سیستم
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        {% if history.description %}
+                                                            <div class="mt-2">
+                                                                <strong>توضیحات:</strong> {{ history.description }}
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                        <div>
+                                            <i class="fas fa-clock bg-gray"></i>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-history fa-3x mb-3"></i>
+                                        <p>هیچ تاریخچه‌ای برای این کالا ثبت نشده است</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card">
+                            <div class="card-body text-center text-muted py-5">
+                                <i class="fas fa-mouse-pointer fa-3x mb-3"></i>
+                                <h4>کالایی را انتخاب کنید</h4>
+                                <p>برای مشاهده تاریخچه، یکی از کالاها را از لیست سمت راست انتخاب کنید</p>
+                                {% if type_filter %}
+                                    <p class="text-info">
+                                        <i class="fas fa-filter"></i>
+                                        فیلتر فعال: 
+                                        <span class="badge badge-{% if type_filter == 'Technical' %}success{% else %}info{% endif %}">
+                                            {% if type_filter == 'Technical' %}فنی{% else %}غیر فنی{% endif %}
+                                        </span>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    margin: 0 0 30px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #ddd;
+    right: 31px;
+    margin: 0;
+    border-radius: 2px;
+}
+
+.timeline > div {
+    position: relative;
+    margin: 0 0 15px 0;
+    clear: both;
+}
+
+.timeline > div > .timeline-item {
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    margin-top: 0;
+    background: #fff;
+    color: #444;
+    margin-right: 60px;
+    margin-left: 15px;
+    padding: 0;
+    position: relative;
+}
+
+.timeline > div > .timeline-item > .time {
+    color: #999;
+    float: left;
+    padding: 10px;
+    font-size: 12px;
+}
+
+.timeline > div > .timeline-item > .timeline-header {
+    margin: 0;
+    color: #555;
+    border-bottom: 1px solid #f4f4f4;
+    padding: 10px;
+    font-size: 16px;
+    line-height: 1.1;
+}
+
+.timeline > div > .timeline-item > .timeline-body {
+    padding: 10px;
+}
+
+.timeline > div > i {
+    position: absolute;
+    right: 18px;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    font-size: 15px;
+    color: #fff;
+}
+
+.time-label > span {
+    font-weight: 600;
+    color: #fff;
+    border-radius: 4px;
+    display: inline-block;
+    padding: 5px;
+}
+
+.btn-group .btn {
+    font-size: 12px;
+    padding: 5px 8px;
+}
+</style>
+{% endblock %}

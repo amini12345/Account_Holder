@@ -1,0 +1,139 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   ورودی Excel
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-upload"></i> ورودی فایل Excel
+          </h3>
+          <div class="card-tools">
+            <a href="{% url 'account:home' %}" class="btn btn-secondary btn-sm">
+              <i class="fas fa-arrow-left"></i> بازگشت
+            </a>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- راهنمای استفاده -->
+          <div class="alert alert-info">
+            <h5><i class="icon fas fa-info"></i> راهنمای استفاده</h5>
+            <div class="row">
+              <div class="col-md-6">
+                <h6><strong>ساختار فایل Excel:</strong></h6>
+                <ul class="mb-2">
+                  <li><strong>ستون A:</strong> ردیف (اختیاری)</li>
+                  <li><strong>ستون B:</strong> نام کالا</li>
+                  <li><strong>ستون C:</strong> نوع کالا (فنی یا غیر فنی)</li>
+                  <li><strong>ستون D:</strong> برند</li>
+                  <li><strong>ستون E:</strong> پیکربندی</li>
+                  <li><strong>ستون F:</strong> وضعیت اصلی</li>
+                  <li><strong>ستون G:</strong> زیر وضعیت</li>
+                  <li><strong>ستون H:</strong> شماره سریال</li>
+                  <li><strong>ستون I:</strong> کد محصول</li>
+                  <li><strong>ستون J:</strong> دارنده حساب</li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h6><strong>نحوه کارکرد:</strong></h6>
+                <ul class="mb-2">
+                  <li><strong>مقایسه کالاها:</strong> فایل با کالاهای موجود مقایسه می‌شود</li>
+                  <li><strong>نقشه‌برداری هدرها:</strong> ترتیب ستون‌ها مهم نیست</li>
+                  <li><strong>ردیف اول:</strong> باید شامل هدرها باشد</li>
+                  <li><strong>فرمت فایل:</strong> .xlsx یا .xls</li>
+                </ul>
+              </div>
+            </div>
+            <div class="alert alert-success mt-2 mb-0">
+              <small><strong>نکته مهم:</strong> سیستم جدید از نقشه‌برداری هدرها استفاده می‌کند. ترتیب ستون‌ها مهم نیست و ستون‌های خالی مشکلی ایجاد نمی‌کنند. ردیف اول باید شامل هدرها باشد و از فایل‌های .xlsx یا .xls استفاده کنید.</small>
+            </div>
+          </div>
+
+          <!-- فرم آپلود -->
+          <div class="row justify-content-center">
+            <div class="col-md-10">
+              <div class="row justify-content-center">
+                
+                <!-- گزینه مقایسه کالاها -->
+                <div class="col-md-6 mb-3">
+                  <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                      <h5 class="mb-0 text-center"><i class="fas fa-balance-scale"></i> مقایسه کالاها</h5>
+                    </div>
+                    <div class="card-body">
+                      <p class="text-muted text-center mb-3">
+                        فایل Excel را با کالاهای موجود در سیستم مقایسه کنید و تفاوت‌ها را مشاهده کنید
+                      </p>
+                      <form method="post" action="{% url 'account:compare_excel' %}" enctype="multipart/form-data" id="compareForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                          <label for="excel_file_compare">انتخاب فایل Excel:</label>
+                          <div class="input-group">
+                            <div class="custom-file">
+                              <input type="file" class="custom-file-input" id="excel_file_compare" name="excel_file" accept=".xlsx,.xls" required>
+                              <label class="custom-file-label" for="excel_file_compare">فایل را انتخاب کنید...</label>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="form-group">
+                          <label for="comparison_type">نوع مقایسه:</label>
+                          <select class="form-control" id="comparison_type" name="comparison_type">
+                            <option value="all">مقایسه کامل</option>
+                            <option value="new_items">فقط کالاهای جدید</option>
+                            <option value="existing_items">فقط کالاهای موجود</option>
+                            <option value="differences">فقط تفاوت‌ها</option>
+                          </select>
+                        </div>
+                        
+                        <div class="text-center">
+                          <button type="submit" class="btn btn-info btn-lg">
+                            <i class="fas fa-search"></i> شروع مقایسه
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- دکمه بازگشت -->
+              <div class="text-center mt-3">
+                <a href="{% url 'account:home' %}" class="btn btn-secondary btn-lg">
+                  <i class="fas fa-arrow-left"></i> بازگشت به صفحه اصلی
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // نمایش نام فایل انتخاب شده برای فرم مقایسه
+    document.getElementById('excel_file_compare').addEventListener('change', function(e) {
+      var fileName = e.target.files[0].name;
+      var nextSibling = e.target.nextElementSibling;
+      nextSibling.innerText = fileName;
+    });
+  </script>
+{% endblock %}

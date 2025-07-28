@@ -1,0 +1,707 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+نتایج مقایسه Excel
+{% endblock %}
+
+{% block main %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-balance-scale"></i> نتایج مقایسه فایل Excel
+                </h3>
+                <div class="card-tools">
+                    <a href="{% url 'account:import_excel' %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> بازگشت
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- آمار کلی -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-chart-bar"></i> آمار مقایسه - {{ comparison_type_display }}</h5>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <div class="info-box bg-success">
+                                        <span class="info-box-icon"><i class="fas fa-plus"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">کالاهای جدید</span>
+                                            <span class="info-box-number">{{ stats.new_items_count }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-primary">
+                                        <span class="info-box-icon"><i class="fas fa-check"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">کالاهای موجود</span>
+                                            <span class="info-box-number">{{ stats.existing_items_count }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-warning">
+                                        <span class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">تفاوت‌ها</span>
+                                            <span class="info-box-number">{{ stats.differences_count }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-info">
+                                        <span class="info-box-icon"><i class="fas fa-database"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">فقط در سیستم</span>
+                                            <span class="info-box-number">{{ stats.system_only_count }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-danger">
+                                        <span class="info-box-icon"><i class="fas fa-times"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">خطاها</span>
+                                            <span class="info-box-number">{{ stats.excel_errors_count }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-secondary">
+                                        <span class="info-box-icon"><i class="fas fa-file-excel"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">کل Excel</span>
+                                            <span class="info-box-number">{{ stats.total_excel_items }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- کالاهای جدید -->
+                {% if comparison_results.new_items %}
+                <div class="card card-success mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-plus"></i> کالاهای جدید ({{ comparison_results.new_items|length }})
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form id="add-new-items-form" method="post" action="{% url 'account:add_selected_items' %}">
+                            {% csrf_token %}
+                            
+                            <!-- دکمه‌های کنترل انتخاب -->
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-new">
+                                    <i class="fas fa-check-square"></i> انتخاب همه
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all-new">
+                                    <i class="fas fa-square"></i> لغو انتخاب همه
+                                </button>
+                                <button type="submit" class="btn btn-success btn-sm" id="add-selected-btn" disabled>
+                                    <i class="fas fa-plus"></i> افزودن موارد انتخاب شده به دیتابیس
+                                    (<span id="selected-count">0</span>)
+                                </button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th width="50">
+                                                <input type="checkbox" id="select-all-checkbox" class="form-check-input">
+                                            </th>
+                                            <th>ردیف Excel</th>
+                                            <th>{{ model_fields.Technical_items }}</th>
+                                            <th>{{ model_fields.type_Item }}</th>
+                                            <th>{{ model_fields.brand }}</th>
+                                            <th>{{ model_fields.Product_code }}</th>
+                                            <th>{{ model_fields.serial_number }}</th>
+                                            <th>{{ model_fields.status_item }}</th>
+                                            <th>{{ model_fields.Number }}</th>
+                                            <th>{{ model_fields.PersonalInfo }}</th>
+                                            <th>دلیل جدید بودن</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in comparison_results.new_items %}
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" name="selected_items" value="{{ forloop.counter0 }}" 
+                                                       class="form-check-input item-checkbox" 
+                                                       data-item='{{ item|safe }}'>
+                                            </td>
+                                            <td>{{ item.row }}</td>
+                                            <td>{{ item.item_name|default:"---" }}</td>
+                                            <td>{{ item.item_type|default:"---" }}</td>
+                                            <td>{{ item.brand|default:"---" }}</td>
+                                            <td><strong>{{ item.product_code }}</strong></td>
+                                            <td>{{ item.serial_number|default:"---" }}</td>
+                                            <td>{{ item.status_main|default:"---" }}{% if item.status_sub %} - {{ item.status_sub }}{% endif %}</td>
+                                            <td>{{ item.number }}</td>
+                                            <td>{{ item.holder_info|default:"---" }}</td>
+                                            <td class="text-success"><i class="fas fa-plus-circle"></i> {{ item.new_item_reason|default:"کالا جدید است" }}</td>
+                                        </tr>
+                                        
+                                        <!-- Hidden inputs for item data -->
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_item_name" value="{{ item.item_name|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_item_type" value="{{ item.item_type|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_brand" value="{{ item.brand|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_product_code" value="{{ item.product_code|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_serial_number" value="{{ item.serial_number|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_status_main" value="{{ item.status_main|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_status_sub" value="{{ item.status_sub|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_number" value="{{ item.number|default:'1' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_holder_info" value="{{ item.holder_info|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_configuration" value="{{ item.configuration|default:'' }}">
+                                        <input type="hidden" name="item_{{ forloop.counter0 }}_row" value="{{ item.row }}">
+                                        
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- کالاهای موجود -->
+                {% if comparison_results.existing_items %}
+                <div class="card card-primary collapsed-card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-check"></i> کالاهای موجود و یکسان ({{ comparison_results.existing_items|length }})
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ردیف Excel</th>
+                                        <th>{{ model_fields.Technical_items }}</th>
+                                        <th>{{ model_fields.Product_code }}</th>
+                                        <th>{{ model_fields.serial_number }}</th>
+                                        <th>{{ model_fields.status_item }}</th>
+                                        <th>{{ model_fields.PersonalInfo }}</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in comparison_results.existing_items %}
+                                    <tr>
+                                        <td>{{ item.excel_data.row }}</td>
+                                        <td>{{ item.system_data.item_name|default:"---" }}</td>
+                                        <td><strong>{{ item.system_data.product_code }}</strong></td>
+                                        <td>{{ item.system_data.serial_number|default:"---" }}</td>
+                                        <td>{{ item.system_data.status_main|default:"---" }}{% if item.system_data.status_sub %} - {{ item.system_data.status_sub }}{% endif %}</td>
+                                        <td>{{ item.system_data.holder_info|default:"---" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'account:item_edit' item.system_data.id %}" 
+                                                   class="btn btn-warning btn-sm" 
+                                                   title="ویرایش کالا">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-danger btn-sm" 
+                                                        title="حذف کالا"
+                                                        onclick="deleteItem({{ item.system_data.id }}, '{{ item.system_data.item_name|default:"کالا" }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- تفاوت‌ها -->
+                {% if comparison_results.differences %}
+                <div class="card card-warning mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-exclamation-triangle"></i> کالاهای دارای تفاوت ({{ comparison_results.differences|length }})
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% for item in comparison_results.differences %}
+                        <div class="card card-outline card-warning mb-3">
+                            <div class="card-header">
+                                <h5 class="card-title">
+                                    ردیف {{ item.excel_data.row }} - {{ item.system_data.item_name|default:"نامشخص" }} 
+                                    (کد: {{ item.system_data.product_code }})
+                                </h5>
+                                <div class="card-tools">
+                                    <a href="{% url 'account:edit_item_from_comparison' item.system_data.id %}" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit"></i> ویرایش کالا
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary"><i class="fas fa-file-excel"></i> داده‌های Excel:</h6>
+                                        <ul class="list-unstyled">
+                                            <li><strong>{{ model_fields.Technical_items }}:</strong> {{ item.excel_data.item_name|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.type_Item }}:</strong> {{ item.excel_data.item_type|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.brand }}:</strong> {{ item.excel_data.brand|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.Configuration }}:</strong> {{ item.excel_data.configuration|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.status_item }}:</strong> {{ item.excel_data.status_main|default:"---" }}{% if item.excel_data.status_sub %} - {{ item.excel_data.status_sub }}{% endif %}</li>
+                                            <li><strong>{{ model_fields.serial_number }}:</strong> {{ item.excel_data.serial_number|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.Product_code }}:</strong> {{ item.excel_data.product_code|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.Number }}:</strong> {{ item.excel_data.number }}</li>
+                                            <li><strong>{{ model_fields.PersonalInfo }}:</strong> {{ item.excel_data.holder_info|default:"---" }}</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-success"><i class="fas fa-database"></i> داده‌های سیستم:</h6>
+                                        <ul class="list-unstyled">
+                                            <li><strong>{{ model_fields.Technical_items }}:</strong> {{ item.system_data.item_name|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.type_Item }}:</strong> {{ item.system_data.item_type|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.brand }}:</strong> {{ item.system_data.brand|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.Configuration }}:</strong> {{ item.system_data.configuration|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.status_item }}:</strong> {{ item.system_data.status_main|default:"---" }}{% if item.system_data.status_sub %} - {{ item.system_data.status_sub }}{% endif %}</li>
+                                            <li><strong>{{ model_fields.serial_number }}:</strong> {{ item.system_data.serial_number|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.Product_code }}:</strong> {{ item.system_data.product_code|default:"---" }}</li>
+                                            <li><strong>{{ model_fields.Number }}:</strong> {{ item.system_data.number }}</li>
+                                            <li><strong>{{ model_fields.PersonalInfo }}:</strong> {{ item.system_data.holder_info|default:"---" }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="alert alert-warning mt-3">
+                                    <h6><i class="fas fa-list"></i> تفاوت‌های شناسایی شده:</h6>
+                                    <ul class="mb-0">
+                                        {% for diff in item.differences %}
+                                        <li>
+                                            <strong>{{ diff.field_label }}:</strong> 
+                                            Excel: <span class="text-primary">"{{ diff.excel_value|default:"خالی" }}"</span> 
+                                            ← سیستم: <span class="text-success">"{{ diff.system_value|default:"خالی" }}"</span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                
+                                <!-- دکمه‌های عملیات -->
+                                <div class="text-center mt-3">
+                                    <a href="{% url 'account:edit_item_from_comparison' item.system_data.id %}" 
+                                       class="btn btn-primary">
+                                        <i class="fas fa-edit"></i> ویرایش کالا در سیستم
+                                    </a>
+                                    <button type="button" class="btn btn-success ml-2" 
+                                            onclick="applyExcelDataToSystem({{ item.system_data.id }}, {{ item.excel_data|safe }})">
+                                        <i class="fas fa-download"></i> اعمال داده‌های Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- کالاهای فقط در سیستم -->
+                {% if comparison_results.system_only %}
+                <div class="card card-info collapsed-card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-database"></i> کالاهای فقط در سیستم ({{ comparison_results.system_only|length }})
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>شناسه</th>
+                                        <th>{{ model_fields.Technical_items }}</th>
+                                        <th>{{ model_fields.type_Item }}</th>
+                                        <th>{{ model_fields.brand }}</th>
+                                        <th>{{ model_fields.Product_code }}</th>
+                                        <th>{{ model_fields.serial_number }}</th>
+                                        <th>{{ model_fields.status_item }}</th>
+                                        <th>{{ model_fields.Number }}</th>
+                                        <th>{{ model_fields.PersonalInfo }}</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in comparison_results.system_only %}
+                                    <tr>
+                                        <td>{{ item.id }}</td>
+                                        <td>{{ item.item_name|default:"---" }}</td>
+                                        <td>{{ item.item_type|default:"---" }}</td>
+                                        <td>{{ item.brand|default:"---" }}</td>
+                                        <td><strong>{{ item.product_code }}</strong></td>
+                                        <td>{{ item.serial_number|default:"---" }}</td>
+                                        <td>{{ item.status_main|default:"---" }}{% if item.status_sub %} - {{ item.status_sub }}{% endif %}</td>
+                                        <td>{{ item.number }}</td>
+                                        <td>{{ item.holder_info|default:"---" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'account:item_edit' item.id %}" 
+                                                   class="btn btn-warning btn-sm" 
+                                                   title="ویرایش کالا">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-danger btn-sm" 
+                                                        title="حذف کالا"
+                                                        onclick="deleteItem({{ item.id }}, '{{ item.item_name|default:"کالا" }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- خطاهای Excel -->
+                {% if comparison_results.excel_errors %}
+                <div class="card card-danger mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-times"></i> خطاهای فایل Excel ({{ comparison_results.excel_errors|length }})
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ردیف</th>
+                                        <th>خطا</th>
+                                        <th>داده‌های موجود</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for error in comparison_results.excel_errors %}
+                                    <tr>
+                                        <td>{{ error.row }}</td>
+                                        <td class="text-danger">{{ error.error }}</td>
+                                        <td>
+                                            {% if error.data.item_name %}نام: {{ error.data.item_name }}{% endif %}
+                                            {% if error.data.serial_number %} | سریال: {{ error.data.serial_number }}{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- دکمه‌های عملیات -->
+                <div class="text-center mt-4">
+                    <a href="{% url 'account:import_excel' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-arrow-left"></i> بازگشت به ورودی Excel
+                    </a>
+                    <a href="{% url 'account:home' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home"></i> بازگشت به صفحه اصلی
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.info-box {
+    margin-bottom: 15px;
+}
+.info-box-content {
+    padding: 5px 10px;
+}
+.info-box-text {
+    font-size: 12px;
+}
+.info-box-number {
+    font-size: 18px;
+    font-weight: bold;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const selectAllBtn = document.getElementById('select-all-new');
+    const deselectAllBtn = document.getElementById('deselect-all-new');
+    const addSelectedBtn = document.getElementById('add-selected-btn');
+    const selectedCountSpan = document.getElementById('selected-count');
+
+    function updateSelectedCount() {
+        const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+        const count = checkedBoxes.length;
+        selectedCountSpan.textContent = count;
+        addSelectedBtn.disabled = count === 0;
+        
+        // Update select all checkbox state
+        if (count === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (count === itemCheckboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+
+    // Handle individual checkbox changes
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+
+    // Handle select all checkbox
+    selectAllCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+        updateSelectedCount();
+    });
+
+    // Handle select all button
+    selectAllBtn.addEventListener('click', function() {
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelectedCount();
+    });
+
+    // Handle deselect all button
+    deselectAllBtn.addEventListener('click', function() {
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateSelectedCount();
+    });
+
+    // Handle form submission
+    document.getElementById('add-new-items-form').addEventListener('submit', function(e) {
+        const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+        if (checkedBoxes.length === 0) {
+            e.preventDefault();
+            alert('لطفاً حداقل یک کالا را انتخاب کنید.');
+            return false;
+        }
+        
+        if (!confirm(`آیا مطمئن هستید که می‌خواهید ${checkedBoxes.length} کالای انتخاب شده را به دیتابیس اضافه کنید؟`)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Initial count update
+    updateSelectedCount();
+});
+
+// تابع اعمال داده‌های Excel به سیستم
+function applyExcelDataToSystem(itemId, excelData) {
+    if (!confirm('آیا مطمئن هستید که می‌خواهید داده‌های Excel را به کالای موجود در سیستم اعمال کنید؟')) {
+        return;
+    }
+    
+    // نمایش loading
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال اعمال...';
+    button.disabled = true;
+    
+    // ارسال درخواست AJAX
+    fetch(`{% url 'account:apply_excel_data_to_item' 0 %}`.replace('0', itemId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(excelData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // نمایش پیام موفقیت
+            showAlert('success', data.message);
+            
+            // به‌روزرسانی نمایش داده‌های سیستم در صفحه
+            updateSystemDataDisplay(itemId, data.item_data);
+            
+            // تغییر دکمه به حالت موفقیت
+            button.innerHTML = '<i class="fas fa-check"></i> اعمال شد';
+            button.className = 'btn btn-success ml-2';
+            
+            // بعد از 3 ثانیه، دکمه را به حالت اولیه برگردان
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.className = 'btn btn-success ml-2';
+                button.disabled = false;
+            }, 3000);
+        } else {
+            showAlert('danger', data.message);
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('خطا:', error);
+        showAlert('danger', 'خطا در اعمال تغییرات');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// تابع نمایش پیام‌ها
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check' : 'exclamation-triangle'}"></i> ${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    
+    const cardBody = document.querySelector('.card-body');
+    cardBody.insertBefore(alertDiv, cardBody.firstChild);
+    
+    // حذف خودکار پیام بعد از 5 ثانیه
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// تابع به‌روزرسانی نمایش داده‌های سیستم
+function updateSystemDataDisplay(itemId, itemData) {
+    // پیدا کردن کارت مربوط به این کالا و به‌روزرسانی داده‌ها
+    // این تابع می‌تواند در آینده برای به‌روزرسانی نمایش استفاده شود
+    console.log('داده‌های به‌روزرسانی شده:', itemData);
+}
+
+// تابع حذف کالا
+function deleteItem(itemId, itemName) {
+    if (!confirm(`آیا مطمئن هستید که می‌خواهید کالای "${itemName}" را حذف کنید؟\n\nاین عمل قابل بازگشت نیست!`)) {
+        return;
+    }
+    
+    // نمایش loading
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    // ارسال درخواست AJAX برای حذف
+    fetch(`{% url 'account:item_delete' 0 %}`.replace('0', itemId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // نمایش پیام موفقیت
+            showAlert('success', `کالای "${itemName}" با موفقیت حذف شد.`);
+            
+            // حذف ردیف از جدول
+            const row = button.closest('tr');
+            row.style.transition = 'opacity 0.3s';
+            row.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                row.remove();
+                
+                // به‌روزرسانی شمارش کالاها در هدر کارت
+                updateItemCounts();
+            }, 300);
+            
+        } else {
+            showAlert('danger', data.message || 'خطا در حذف کالا');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('خطا:', error);
+        showAlert('danger', 'خطا در حذف کالا');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// تابع به‌روزرسانی شمارش کالاها
+function updateItemCounts() {
+    // به‌روزرسانی تعداد کالاهای موجود در هدر کارت‌ها
+    const existingItemsCard = document.querySelector('.card-primary .card-title');
+    const systemOnlyCard = document.querySelector('.card-info .card-title');
+    
+    if (existingItemsCard) {
+        const existingCount = document.querySelectorAll('.card-primary tbody tr').length;
+        existingItemsCard.innerHTML = existingItemsCard.innerHTML.replace(/\(\d+\)/, `(${existingCount})`);
+    }
+    
+    if (systemOnlyCard) {
+        const systemOnlyCount = document.querySelectorAll('.card-info tbody tr').length;
+        systemOnlyCard.innerHTML = systemOnlyCard.innerHTML.replace(/\(\d+\)/, `(${systemOnlyCount})`);
+    }
+    
+    // به‌روزرسانی آمار کلی
+    const existingStatsBox = document.querySelector('.info-box.bg-primary .info-box-number');
+    const systemOnlyStatsBox = document.querySelector('.info-box.bg-info .info-box-number');
+    
+    if (existingStatsBox) {
+        const existingCount = document.querySelectorAll('.card-primary tbody tr').length;
+        existingStatsBox.textContent = existingCount;
+    }
+    
+    if (systemOnlyStatsBox) {
+        const systemOnlyCount = document.querySelectorAll('.card-info tbody tr').length;
+        systemOnlyStatsBox.textContent = systemOnlyCount;
+    }
+}
+</script>
+{% endblock %}

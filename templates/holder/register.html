@@ -1,0 +1,94 @@
+{% extends 'holder/base.html' %}
+{% load form_tags %}
+
+{% block title %}ثبت‌نام کاربر جدید{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="form-container">
+            <h2 class="mb-4">ثبت‌نام کاربر جدید</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                        {{ form.name.errors }}
+                        {{ form.name|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.family.id_for_label }}" class="form-label">{{ form.family.label }}</label>
+                        {{ form.family.errors }}
+                        {{ form.family|add_class:"form-control" }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.Personnel_number.id_for_label }}" class="form-label">{{ form.Personnel_number.label }}</label>
+                        {{ form.Personnel_number.errors }}
+                        {{ form.Personnel_number|add_class:"form-control" }}
+                        {% if form.Personnel_number.help_text %}
+                            <small class="form-text text-muted">{{ form.Personnel_number.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.National_ID.id_for_label }}" class="form-label">{{ form.National_ID.label }}</label>
+                        {{ form.National_ID.errors }}
+                        {{ form.National_ID|add_class:"form-control" }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">{{ form.date_of_birth.label }}</label>
+                        {{ form.date_of_birth.errors }}
+                        {{ form.date_of_birth|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.Educational_degree.id_for_label }}" class="form-label">{{ form.Educational_degree.label }}</label>
+                        {{ form.Educational_degree.errors }}
+                        {{ form.Educational_degree|add_class:"form-control" }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                        {{ form.email.errors }}
+                        {{ form.email|add_class:"form-control" }}
+                        {% if form.email.help_text %}
+                            <small class="form-text text-muted">{{ form.email.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">{{ form.phone_number.label }}</label>
+                        {{ form.phone_number.errors }}
+                        {{ form.phone_number|add_class:"form-control" }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+                        {{ form.password.errors }}
+                        {{ form.password|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.confirm_password.id_for_label }}" class="form-label">{{ form.confirm_password.label }}</label>
+                        {{ form.confirm_password.errors }}
+                        {{ form.confirm_password|add_class:"form-control" }}
+                    </div>
+                </div>
+
+                <div class="mb-3 d-grid">
+                    <button type="submit" class="btn btn-primary">ثبت‌نام</button>
+                </div>
+            </form>
+            <div class="text-center mt-3">
+                <p>قبلاً ثبت‌نام کرده‌اید؟ <a href="{% url 'login' %}">ورود به حساب</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

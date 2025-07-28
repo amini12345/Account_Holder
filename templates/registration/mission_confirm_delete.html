@@ -1,0 +1,118 @@
+{% extends 'registration/base.html' %}
+{% load static %}
+
+{% block title %}تایید حذف ماموریت{% endblock %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-trash"></i> تایید حذف ماموریت
+                        </h3>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <h5><i class="icon fas fa-exclamation-triangle"></i> هشدار!</h5>
+                            آیا مطمئن هستید که می‌خواهید این ماموریت را حذف کنید؟ این عمل قابل بازگشت نیست.
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">جزئیات ماموریت:</h5>
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>نوع ماموریت:</strong></td>
+                                            <td>{{ object.types_of_missions }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>مقصد:</strong></td>
+                                            <td>
+                                                <span class="badge badge-info">{{ object.mission_location }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>تاریخ شروع:</strong></td>
+                                            <td><code>{{ object.jinfo }}</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>بازه زمانی:</strong></td>
+                                            <td><code>{{ object.time_frame }} روز</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>تعداد شرکت‌کنندگان:</strong></td>
+                                            <td>
+                                                <span class="badge badge-success">{{ object.PersonalInfo.count }} نفر</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>تاریخ ثبت:</strong></td>
+                                            <td>{{ object.register_date|date:"Y/m/d H:i" }}</td>
+                                        </tr>
+                                        {% if object.Mission_Description %}
+                                        <tr>
+                                            <td><strong>توضیحات:</strong></td>
+                                            <td>{{ object.Mission_Description }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> بله، حذف کن
+                            </button>
+                            <a href="{% url 'account:missions_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+}
+
+.btn {
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.table td {
+    border-top: none;
+    padding: 0.5rem;
+}
+
+.table tr:first-child td {
+    border-top: 1px solid #dee2e6;
+}
+
+.alert {
+    border-radius: 0.25rem;
+}
+
+.badge {
+    font-size: 0.875em;
+}
+
+.card-title {
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

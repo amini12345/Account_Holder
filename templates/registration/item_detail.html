@@ -1,0 +1,336 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+  جزئیات کالا
+{% endblock %}
+
+{% block main %}
+<div class="row">
+  <div class="col-md-8">
+    <!-- اطلاعات کالا -->
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-box"></i> جزئیات کالا
+        </h3>
+        <div class="card-tools">
+          <a href="{% url 'account:item_edit' item.pk %}" class="btn btn-warning btn-sm">
+            <i class="fas fa-edit"></i> ویرایش
+          </a>
+          <a href="{% url 'account:item_delete' item.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('آیا مطمئن هستید؟')">
+            <i class="fas fa-trash"></i> حذف
+          </a>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <table class="table table-borderless">
+              <tr>
+                <td><strong>نام کالا:</strong></td>
+                <td>{{ item.Technical_items|default:"تعریف نشده" }}</td>
+              </tr>
+              <tr>
+                <td><strong>نوع کالا:</strong></td>
+                <td>
+                  {% if item.type_Item == 'Technical' %}
+                    <span class="badge badge-primary">فنی</span>
+                  {% elif item.type_Item == 'Non-technical' %}
+                    <span class="badge badge-secondary">غیر فنی</span>
+                  {% else %}
+                    <span class="badge badge-light">نامشخص</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>وضعیت کالا:</strong></td>
+                <td>
+                  <span class="badge badge-info">{{ item.get_status_item_display|default:"نامشخص" }}</span>
+                  {% if item.status_sub_item %}
+                    <br><small class="text-muted">{{ item.get_status_sub_item_display }}</small>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>برند:</strong></td>
+                <td>{{ item.brand|default:"تعریف نشده" }}</td>
+              </tr>
+              <tr>
+                <td><strong>شماره سریال:</strong></td>
+                <td><code>{{ item.serial_number|default:"ندارد" }}</code></td>
+              </tr>
+              <tr>
+                <td><strong>کد محصول:</strong></td>
+                <td><code>{{ item.Product_code|default:"ندارد" }}</code></td>
+              </tr>
+            </table>
+          </div>
+          
+          <div class="col-md-6">
+            <table class="table table-borderless">
+              
+              {% if item.Configuration %}
+              <tr>
+                <td><strong>پیکربندی:</strong></td>
+                <td>{{ item.Configuration|truncatewords:10 }}</td>
+              </tr>
+              {% endif %}
+            </table>
+          </div>
+        </div>
+        
+        {% if item.Configuration %}
+        <div class="row mt-3">
+          <div class="col-md-12">
+            <h5>پیکربندی و مشخصات:</h5>
+            <div class="card card-light">
+              <div class="card-body">
+                {{ item.Configuration|linebreaks }}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- تاریخچه کالا -->
+    <div class="card card-info mt-3">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-history"></i> تاریخچه کالا
+        </h3>
+      </div>
+      
+      <div class="card-body">
+        {% if history %}
+          <div class="timeline">
+            {% for record in history %}
+              <div class="time-label">
+                <span class="bg-info">{{ record.action_date|date:"Y/m/d" }}</span>
+              </div>
+              <div>
+                <i class="fas fa-{{ record.action_type|default:'circle' }} bg-primary"></i>
+                <div class="timeline-item">
+                  <span class="time">
+                    <i class="fas fa-clock"></i> {{ record.action_date|date:"H:i" }}
+                  </span>
+                  <h3 class="timeline-header">
+                    <span class="badge badge-info">{{ record.get_action_type_display }}</span>
+                  </h3>
+                  <div class="timeline-body">
+                    {% if record.from_person %}
+                      <strong>از:</strong> {{ record.from_person.name }} {{ record.from_person.family }}<br>
+                    {% endif %}
+                    {% if record.to_person %}
+                      <strong>به:</strong> {{ record.to_person.name }} {{ record.to_person.family }}<br>
+                    {% endif %}
+                    {% if record.description %}
+                      <strong>توضیحات:</strong> {{ record.description }}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+            <div>
+              <i class="fas fa-clock bg-gray"></i>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center text-muted py-4">
+            <i class="fas fa-history fa-2x mb-2"></i>
+            <br>
+            هیچ تاریخچه‌ای برای این کالا ثبت نشده است
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- اطلاعات دارنده حساب -->
+  <div class="col-md-4">
+    {% if item.PersonalInfo %}
+    <div class="card card-success">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-user"></i> دارنده حساب
+        </h3>
+      </div>
+      
+      <div class="card-body">
+        <table class="table table-borderless table-sm">
+          <tr>
+            <td><strong>نام:</strong></td>
+            <td>{{ item.PersonalInfo.name }}</td>
+          </tr>
+          <tr>
+            <td><strong>نام خانوادگی:</strong></td>
+            <td>{{ item.PersonalInfo.family }}</td>
+          </tr>
+          <tr>
+            <td><strong>شماره پرسنلی:</strong></td>
+            <td><code>{{ item.PersonalInfo.Personnel_number }}</code></td>
+          </tr>
+          <tr>
+            <td><strong>کد ملی:</strong></td>
+            <td><code>{{ item.PersonalInfo.National_ID }}</code></td>
+          </tr>
+          <tr>
+            <td><strong>شماره همراه:</strong></td>
+            <td>{{ item.PersonalInfo.phone_number }}</td>
+          </tr>
+          {% if item.PersonalInfo.email %}
+          <tr>
+            <td><strong>ایمیل:</strong></td>
+            <td>{{ item.PersonalInfo.email }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td><strong>مدرک تحصیلی:</strong></td>
+            <td>{{ item.PersonalInfo.get_Educational_degree_display }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card card-warning">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-exclamation-triangle"></i> دارنده حساب
+        </h3>
+      </div>
+      
+      <div class="card-body">
+        <p class="text-center text-muted">
+          <i class="fas fa-user-slash fa-2x mb-2"></i><br>
+          این کالا به هیچ شخصی تخصیص داده نشده است
+        </p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- عملیات سریع -->
+    <div class="card card-warning mt-3">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-tools"></i> عملیات سریع
+        </h3>
+      </div>
+      
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a href="{% url 'account:item_edit' item.pk %}" class="btn btn-warning btn-block">
+            <i class="fas fa-edit"></i> ویرایش کالا
+          </a>
+         
+        
+          </button>
+          <a href="{% url 'account:home' %}" class="btn btn-primary btn-block">
+            <i class="fas fa-list"></i> بازگشت به لیست
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.table-borderless td {
+  border: none;
+  padding: 0.5rem 0.75rem;
+}
+
+.timeline {
+  position: relative;
+  margin: 0 0 30px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #ddd;
+  left: 31px;
+  margin: 0;
+  border-radius: 2px;
+}
+
+.timeline > div {
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.timeline > div > .timeline-item {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  margin-top: 0;
+  background: #fff;
+  color: #444;
+  margin-left: 60px;
+  margin-right: 15px;
+  padding: 0;
+  position: relative;
+}
+
+.timeline > div > .fas {
+  width: 30px;
+  height: 30px;
+  font-size: 15px;
+  line-height: 30px;
+  position: absolute;
+  color: #666;
+  background: #d2d6de;
+  border-radius: 50%;
+  text-align: center;
+  left: 18px;
+  top: 0;
+}
+
+.timeline > .time-label > span {
+  font-weight: 600;
+  color: #fff;
+  border-radius: 4px;
+  display: inline-block;
+  padding: 5px;
+}
+
+.timeline-header {
+  margin: 0;
+  color: #555;
+  border-bottom: 1px solid #f4f4f4;
+  padding: 10px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.timeline-body, .timeline-footer {
+  padding: 10px;
+}
+
+.time {
+  color: #999;
+  float: right;
+  padding: 10px;
+  font-size: 12px;
+}
+
+.btn-block {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.d-grid {
+  display: grid;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+</style>
+{% endblock %}

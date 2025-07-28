@@ -1,0 +1,281 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   جزئیات درخواست تغییر
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.status-badge {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+
+.status-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-approved {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-rejected {
+    background-color: #dc3545;
+    color: white;
+}
+
+.change-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.change-field {
+    font-weight: bold;
+    color: #495057;
+}
+
+.change-arrow {
+    color: #6c757d;
+    margin: 0 0.5rem;
+}
+
+.old-value {
+    color: #dc3545;
+    text-decoration: line-through;
+}
+
+.new-value {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.info-section {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.section-title {
+    color: #495057;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+</style>
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-exchange-alt mr-2"></i>
+            جزئیات درخواست تغییر کالا
+          </h3>
+          <div class="card-tools">
+            <a href="{% url 'account:change_requests_list' %}" class="btn btn-secondary btn-sm">
+              <i class="fas fa-arrow-left"></i> بازگشت به لیست
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- اطلاعات کلی درخواست -->
+    <div class="col-md-6">
+      <div class="info-section">
+        <h4 class="section-title">
+          <i class="fas fa-info-circle mr-2"></i>
+          اطلاعات درخواست
+        </h4>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>وضعیت:</strong></div>
+          <div class="col-sm-8">
+            <span class="badge status-badge status-{{ change_request.status }}">
+              {{ change_request.get_status_display }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>نوع تغییر:</strong></div>
+          <div class="col-sm-8">
+            <span class="badge badge-info">{{ change_request.get_action_type_display }}</span>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>مدیر درخواست‌دهنده:</strong></div>
+          <div class="col-sm-8">{{ change_request.admin_user }}</div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>تاریخ ایجاد:</strong></div>
+          <div class="col-sm-8">{{ change_request.jinfo }}</div>
+        </div>
+        
+        {% if change_request.responded_at %}
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>تاریخ پاسخ:</strong></div>
+          <div class="col-sm-8">{{ change_request.responded_at|date:"Y/m/d H:i" }}</div>
+        </div>
+        {% endif %}
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>توضیحات:</strong></div>
+          <div class="col-sm-8">{{ change_request.description|default:"ندارد" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- اطلاعات کالا و مالک -->
+    <div class="col-md-6">
+      <div class="info-section">
+        <h4 class="section-title">
+          <i class="fas fa-box mr-2"></i>
+          اطلاعات کالا و مالک
+        </h4>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>نام کالا:</strong></div>
+          <div class="col-sm-8">{{ change_request.item.Technical_items|default:"بدون نام" }}</div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>شماره س��یال:</strong></div>
+          <div class="col-sm-8">{{ change_request.item.serial_number|default:"ندارد" }}</div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>کد محصول:</strong></div>
+          <div class="col-sm-8">{{ change_request.item.Product_code|default:"ندارد" }}</div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>مالک فعلی:</strong></div>
+          <div class="col-sm-8">
+            {{ change_request.owner.name }} {{ change_request.owner.family }}<br>
+            <small class="text-muted">{{ change_request.owner.Personnel_number }}</small>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>وضعیت کالا:</strong></div>
+          <div class="col-sm-8">{{ change_request.item.get_status_item_display }}</div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-sm-4"><strong>برند:</strong></div>
+          <div class="col-sm-8">{{ change_request.item.brand|default:"ندارد" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تغییرات پیشنهادی -->
+  <div class="row">
+    <div class="col-12">
+      <div class="info-section">
+        <h4 class="section-title">
+          <i class="fas fa-edit mr-2"></i>
+          تغییرات پیشنهادی
+        </h4>
+        
+        {% if change_request.proposed_changes %}
+          {% for field, change in change_request.proposed_changes.items %}
+          <div class="change-item">
+            <div class="row">
+              <div class="col-md-3">
+                <span class="change-field">{{ field }}:</span>
+              </div>
+              <div class="col-md-9">
+                <span class="old-value">{{ change.old|default:"---" }}</span>
+                <span class="change-arrow">
+                  <i class="fas fa-arrow-right"></i>
+                </span>
+                <span class="new-value">{{ change.new|default:"---" }}</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">هیچ تغییر خاصی تعریف نشده است.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- عملیات -->
+  {% if change_request.status == 'pending' %}
+  <div class="row">
+    <div class="col-12">
+      <div class="info-section">
+        <h4 class="section-title">
+          <i class="fas fa-cogs mr-2"></i>
+          عملیات
+        </h4>
+        
+        <div class="btn-group" role="group">
+          <form method="post" action="{% url 'account:approve_change_request_admin' change_request.id %}" 
+                class="d-inline" onsubmit="return confirm('آیا از تایید اجباری این درخواست اطمینان دارید؟ این عمل بدون تایید مالک انجام خواهد شد.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-check mr-2"></i>
+              تایید اجباری
+            </button>
+          </form>
+          
+          <form method="post" action="{% url 'account:reject_change_request_admin' change_request.id %}" 
+                class="d-inline ml-2" onsubmit="return confirm('آیا از رد این درخواست اطمینان دارید؟')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-times mr-2"></i>
+              رد درخواست
+            </button>
+          </form>
+        </div>
+        
+        <div class="alert alert-warning mt-3">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          <strong>توجه:</strong> تایید اجباری باعث اعمال تغییرات بدون تایید مالک کالا خواهد شد.
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add any JavaScript functionality here if needed
+});
+</script>
+{% endblock %}

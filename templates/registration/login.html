@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+	<title>ورود به سیستم</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" type="image/png" href="{% static 'registration/Login/images/icons/favicon.ico' %}"/>
+	<link rel="stylesheet" type="text/css" href="{% static 'registration/Login/fonts/font-awesome-4.7.0/css/font-awesome.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'registration/Login/fonts/Linearicons-Free-v1.0.0/icon-font.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'registration/Login/css/util.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'registration/Login/css/main.css' %}">
+	<style>
+		.container-login100 {
+			background-image: url("{% static 'registration/Login/images/bg-01.jpg' %}") !important;
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+		}
+		.login100-form-title {
+			font-family: 'Tahoma', sans-serif;
+		}
+		.input100 {
+			font-family: 'Tahoma', sans-serif;
+		}
+		.login100-form-btn {
+			font-family: 'Tahoma', sans-serif;
+		}
+		.alert {
+			background-color: #f8d7da;
+			border: 1px solid #f5c6cb;
+			color: #721c24;
+			padding: 10px;
+			border-radius: 5px;
+			margin-bottom: 20px;
+		}
+	</style>
+</head>
+<body>
+	
+	<div class="limiter">
+		<div class="container-login100">
+			<div class="wrap-login100 p-t-30 p-b-50">
+				<span class="login100-form-title p-b-41">
+					ورود به سیستم
+				</span>
+				<form class="login100-form validate-form p-b-33 p-t-5" method="post">{% csrf_token %}
+					{% if form.errors %}
+						<div class="alert">
+							{% for field, errors in form.errors.items %}
+								{% for error in errors %}
+									<div>{{ error }}</div>
+								{% endfor %}
+							{% endfor %}
+						</div>
+					{% endif %}
+
+					<div class="wrap-input100 validate-input" data-validate="نام کاربری را وارد کنید">
+						<input class="input100" type="text" name="username" placeholder="نام کاربری" value="{{ form.username.value|default:'' }}" required>
+						<span class="focus-input100" data-placeholder="&#xe82a;"></span>
+					</div>
+
+					<div class="wrap-input100 validate-input" data-validate="رمز عبور را وارد کنید">
+						<input class="input100" type="password"{{form.user.password}} name="password" placeholder="رمز عبور" required>
+						<span class="focus-input100" data-placeholder="&#xe80f;"></span>
+					</div>
+
+					<div class="container-login100-form-btn m-t-32">
+						<button type="submit" class="login100-form-btn">
+							ورود
+						</button>
+					</div>
+
+				</form>
+			</div>
+		</div>
+	</div>
+	
+	<script src="{% static 'registration/Login/js/main.js' %}"></script>
+
+</body>
+</html>

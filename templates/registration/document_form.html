@@ -1,0 +1,244 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+  {% if object %}
+    ویرایش مدرک
+  {% else %}
+    {{ title|default:"افزودن مدرک جدید" }}
+  {% endif %}
+{% endblock %}
+
+{% block main %}
+<div class="row">
+  <div class="col-md-10 offset-md-1">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">
+          {% if object %}
+            <i class="fas fa-edit"></i> ویرایش مدرک
+          {% else %}
+            <i class="fas fa-plus"></i> {{ title|default:"افزودن مدرک جدید" }}
+          {% endif %}
+        </h3>
+      </div>
+      
+      <form method="post">
+        {% csrf_token %}
+        <div class="card-body">
+          {% if form.errors %}
+            <div class="alert alert-danger">
+              <h5><i class="icon fas fa-ban"></i>خطا</h5>
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.name_document.id_for_label }}">{{ form.name_document.label }}</label>
+                {{ form.name_document }}
+                {% if form.name_document.help_text %}
+                  <small class="form-text text-muted">{{ form.name_document.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.Type_of_training.id_for_label }}">{{ form.Type_of_training.label }}</label>
+                {{ form.Type_of_training }}
+                {% if form.Type_of_training.help_text %}
+                  <small class="form-text text-muted">{{ form.Type_of_training.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}</label>
+                {{ form.start_date }}
+                {% if form.start_date.help_text %}
+                  <small class="form-text text-muted">{{ form.start_date.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
+                {{ form.end_date }}
+                {% if form.end_date.help_text %}
+                  <small class="form-text text-muted">{{ form.end_date.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.Training_hours.id_for_label }}">{{ form.Training_hours.label }}</label>
+                {{ form.Training_hours }}
+                {% if form.Training_hours.help_text %}
+                  <small class="form-text text-muted">{{ form.Training_hours.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.Training_costs.id_for_label }}">{{ form.Training_costs.label }}</label>
+                {{ form.Training_costs }}
+                {% if form.Training_costs.help_text %}
+                  <small class="form-text text-muted">{{ form.Training_costs.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="{{ form.Training_location.id_for_label }}">{{ form.Training_location.label }}</label>
+                {{ form.Training_location }}
+                {% if form.Training_location.help_text %}
+                  <small class="form-text text-muted">{{ form.Training_location.help_text }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="{{ form.PersonalInfo.id_for_label }}">{{ form.PersonalInfo.label }}</label>
+                {{ form.PersonalInfo }}
+                {% if form.PersonalInfo.help_text %}
+                  <small class="form-text text-muted">{{ form.PersonalInfo.help_text }}</small>
+                {% endif %}
+                <small class="form-text text-muted">
+                  <i class="fas fa-info-circle"></i>
+                  برای انتخاب چندین نفر، کلید Ctrl (یا Cmd در Mac) را نگه دارید و روی افراد مورد نظر کلیک کنید.
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i>
+            {% if object %}
+              به‌روزرسانی
+            {% else %}
+              ذخیره
+            {% endif %}
+          </button>
+          <a href="{% url 'account:documents_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> انصراف
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تنظیم تاریخ امروز به عنوان حداقل تاریخ برای فیلدهای تاریخ
+    const today = new Date().toISOString().split('T')[0];
+    const startDateField = document.getElementById('id_start_date');
+    const endDateField = document.getElementById('id_end_date');
+    
+    // اعتبارسنجی تاریخ پایان نسبت به تاریخ شروع
+    function validateDates() {
+        const startDate = startDateField.value;
+        const endDate = endDateField.value;
+        
+        if (startDate && endDate) {
+            if (new Date(endDate) < new Date(startDate)) {
+                endDateField.setCustomValidity('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد');
+            } else {
+                endDateField.setCustomValidity('');
+            }
+        }
+    }
+    
+    // اضافه کردن event listener برای اعتبارسنجی تاریخ‌ها
+    if (startDateField && endDateField) {
+        startDateField.addEventListener('change', validateDates);
+        endDateField.addEventListener('change', validateDates);
+    }
+    
+    // بهبود نمایش فیلد انتخاب چندگانه
+    const personalInfoField = document.getElementById('id_PersonalInfo');
+    if (personalInfoField) {
+        personalInfoField.style.minHeight = '120px';
+    }
+});
+</script>
+
+<style>
+.form-control, .form-control:focus {
+  border-radius: 0.25rem;
+}
+
+.card {
+  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.btn {
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+/* استایل بهتر برای فیلد انتخاب چندگانه */
+select[multiple] {
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem;
+}
+
+select[multiple] option {
+  padding: 5px;
+  margin: 2px 0;
+}
+
+select[multiple] option:checked {
+  background-color: #007bff;
+  color: white;
+}
+
+/* استایل برای فیلدهای تاریخ */
+input[type="date"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* استایل برای فیلدهای عددی */
+input[type="number"] {
+  direction: ltr;
+  text-align: right;
+}
+
+.text-muted {
+  font-size: 0.875rem;
+}
+
+.alert {
+  border-radius: 0.25rem;
+}
+</style>
+{% endblock %}

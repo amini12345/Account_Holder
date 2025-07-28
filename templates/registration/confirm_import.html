@@ -1,0 +1,194 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   تأیید ورودی Excel
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-check-circle"></i> تأیید ورودی داده‌ها
+          </h3>
+          <div class="card-tools">
+            <a href="{% url 'account:import_excel' %}" class="btn btn-secondary btn-sm">
+              <i class="fas fa-arrow-left"></i> بازگشت
+            </a>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- خلاصه آمار -->
+          <div class="row mb-4">
+            <div class="col-md-4">
+              <div class="info-box bg-info">
+                <span class="info-box-icon"><i class="fas fa-list"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">کل موارد</span>
+                  <span class="info-box-number">{{ total_items }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="info-box bg-success">
+                <span class="info-box-icon"><i class="fas fa-plus"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">موارد جدید</span>
+                  <span class="info-box-number">{{ create_count }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="info-box bg-warning">
+                <span class="info-box-icon"><i class="fas fa-edit"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">موارد به‌روزرسانی</span>
+                  <span class="info-box-number">{{ update_count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- فرم تأیید -->
+          <form method="post" action="{% url 'account:confirm_import' %}">
+            {% csrf_token %}
+            
+            <div class="alert alert-warning">
+              <h5><i class="icon fas fa-exclamation-triangle"></i> توجه!</h5>
+              لطفاً موارد زیر را بررسی کرده و موارد مورد نظر خود را انتخاب کنید. فقط موارد انتخاب شده اعمال خواهند شد.
+            </div>
+
+            <!-- دکمه‌های کنترل -->
+            <div class="mb-3">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                <i class="fas fa-check-square"></i> انتخاب همه
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAll()">
+                <i class="fas fa-square"></i> لغو انتخاب همه
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-success" onclick="selectNew()">
+                <i class="fas fa-plus"></i> انتخاب موارد جدید
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-warning" onclick="selectUpdates()">
+                <i class="fas fa-edit"></i> انتخاب به‌روزرسانی‌ها
+              </button>
+            </div>
+
+            <!-- جدول داده‌ها -->
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped">
+                <thead>
+                  <tr>
+                    <th width="50">انتخاب</th>
+                    <th width="60">ردیف</th>
+                    <th width="80">عملیات</th>
+                    <th>نام کالا</th>
+                    <th>نوع</th>
+                    <th>برند</th>
+                    <th>وضعیت</th>
+                    <th>شماره سریال</th>
+                    <th>کد محصول</th>
+                    <th>دارنده</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in processed_items %}
+                    <tr class="{% if item.action_type == 'create' %}table-success{% else %}table-warning{% endif %}">
+                      <td class="text-center">
+                        <input type="checkbox" 
+                               name="confirmed_items" 
+                               value="{{ item.row_number }}" 
+                               class="item-checkbox {% if item.action_type == 'create' %}new-item{% else %}update-item{% endif %}"
+                               checked>
+                      </td>
+                      <td class="text-center">{{ item.row_number }}</td>
+                      <td class="text-center">
+                        {% if item.action_type == 'create' %}
+                          <span class="badge badge-success">
+                            <i class="fas fa-plus"></i> جدید
+                          </span>
+                        {% else %}
+                          <span class="badge badge-warning">
+                            <i class="fas fa-edit"></i> به‌روزرسانی
+                          </span>
+                        {% endif %}
+                      </td>
+                      <td>{{ item.display_data.item_name }}</td>
+                      <td>{{ item.display_data.item_type }}</td>
+                      <td>{{ item.display_data.brand }}</td>
+                      <td>{{ item.display_data.status }}</td>
+                      <td><code>{{ item.display_data.serial_number }}</code></td>
+                      <td><code>{{ item.display_data.product_code }}</code></td>
+                      <td>{{ item.display_data.holder_info }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- دکمه‌های عملیات -->
+            <div class="mt-4">
+              <button type="submit" class="btn btn-success btn-lg" onclick="return confirmSubmit()">
+                <i class="fas fa-check"></i> تأیید و اعمال تغییرات
+              </button>
+              <a href="{% url 'account:import_excel' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times"></i> انصراف
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function selectAll() {
+      document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        checkbox.checked = true;
+      });
+    }
+
+    function deselectAll() {
+      document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        checkbox.checked = false;
+      });
+    }
+
+    function selectNew() {
+      document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        checkbox.checked = checkbox.classList.contains('new-item');
+      });
+    }
+
+    function selectUpdates() {
+      document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        checkbox.checked = checkbox.classList.contains('update-item');
+      });
+    }
+
+    function confirmSubmit() {
+      var checkedItems = document.querySelectorAll('.item-checkbox:checked').length;
+      if (checkedItems === 0) {
+        alert('لطفاً حداقل یک مورد را انتخاب کنید.');
+        return false;
+      }
+      
+      return confirm('آیا از اعمال تغییرات روی ' + checkedItems + ' مورد انتخاب شده مطمئن هستید؟');
+    }
+  </script>
+{% endblock %}

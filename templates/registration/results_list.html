@@ -1,0 +1,302 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+   لیست نتایج
+{% endblock %}
+
+{% block main %}
+  <!-- نمایش پیام‌ها -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="alert alert-info">
+        <h5><i class="icon fas fa-info"></i> خوش آمدید {{ user.get_full_name }}</h5>
+        در این بخش میتوانید لیست کامل نتایج را مشاهده و مدیریت کنید.
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-3">
+    <div class="col-lg-4 col-6">
+      <div class="small-box bg-info">
+        <div class="inner">
+          <h3>{{ total_results|default:0 }}</h3>
+          <p>کل نتایج</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 col-6">
+      <div class="small-box bg-success">
+        <div class="inner">
+          <h3>{{ total_meetings|default:0 }}</h3>
+          <p>کل جلسات</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-users"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 col-6">
+      <div class="small-box bg-warning">
+        <div class="inner">
+          <h3>{{ recent_results|default:0 }}</h3>
+          <p>نتایج اخیر</p>
+        </div>
+        <div class="icon">
+          <i class="fas fa-clock"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">جدول نتایج</h3>
+        </div>
+        <!-- /.card-header -->
+        <div class="card-body table-responsive p-0">
+          <table class="table table-hover text-nowrap">
+            <thead>
+              <tr>
+                <th>ردیف</th>
+                <th style="cursor: pointer; user-select: none;" onclick="sortTable('date')" title="کلیک کنید تا مرتب شود">
+                  تاریخ تحویل
+                  <i class="fas fa-sort ml-1" id="date-sort-icon"></i>
+                </th>
+                <th style="cursor: pointer; user-select: none;" onclick="sortTable('meetings')" title="کلیک کنید تا مرتب شود">
+                  تعداد جلسات داخلی
+                  <i class="fas fa-sort ml-1" id="meetings-sort-icon"></i>
+                </th>
+                <th>صورت جلسات</th>
+                <th>مسئول</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for result in object_list %}
+                  <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>
+                        <small>{{ result.Date_of_submission|date:"Y/m/d H:i" }}</small>
+                      </td>
+                      <td>
+                        <span class="badge badge-primary">{{ result.Internal_meetings }} جلسه</span>
+                      </td>
+                      <td>
+                        <small class="text-info">{{ result.Meeting_Minutes|truncatechars:50 }}</small>
+                      </td>
+                      <td>
+                        {% if result.PersonalInfo %}
+                          <strong>{{ result.PersonalInfo.name }} {{ result.PersonalInfo.family }}</strong>
+                          <br>
+                          <small class="text-muted">{{ result.PersonalInfo.Personnel_number }}</small>
+                        {% else %}
+                          <span class="text-muted">تعیین نشده</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                          <a href="{% url 'account:result_edit' result.pk %}" class="btn btn-warning btn-sm" title="ویرایش">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="{% url 'account:result_delete' result.pk %}" class="btn btn-danger btn-sm" title="حذف" onclick="return confirm('آیا مطمئن هستید؟')">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                      <i class="fas fa-chart-line fa-2x mb-2"></i>
+                      <br>
+                      هیچ نتیجه‌ای یافت نشد
+                    </td>
+                  </tr>
+                {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <!-- /.card-body -->
+        <div class="card-footer clearfix">
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="dataTables_info">
+                {% if is_paginated %}
+                  نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ paginator.count }} نتیجه
+                {% else %}
+                  نمایش {{ object_list|length }} نتیجه
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-sm-6">
+              {% if is_paginated %}
+                <ul class="pagination pagination-sm m-0 float-right">
+                  {% if page_obj.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1">«</a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹</a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled"><a class="page-link" href="#">«</a></li>
+                    <li class="page-item disabled"><a class="page-link" href="#">‹</a></li>
+                  {% endif %}
+
+                  {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                      <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if page_obj.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.next_page_number }}">›</a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ paginator.num_pages }}">»</a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled"><a class="page-link" href="#">›</a></li>
+                    <li class="page-item disabled"><a class="page-link" href="#">»</a></li>
+                  {% endif %}
+                </ul>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.card -->
+    </div>
+  </div>
+
+  <script>
+    // متغیرهای مرتب‌سازی
+    let currentSort = {
+      column: null,
+      direction: 'asc'
+    };
+
+    // تابع مرتب‌سازی جدول
+    function sortTable(column) {
+      const table = document.querySelector('.table tbody');
+      const rows = Array.from(table.querySelectorAll('tr')).filter(row => 
+        !row.querySelector('td[colspan]') && row.cells.length > 1
+      );
+      
+      if (rows.length === 0) return;
+      
+      // تعیین جهت مرتب���سازی
+      if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+      }
+
+      // تعیین ستون مورد نظر برای مرتب‌سازی
+      let columnIndex;
+      if (column === 'date') {
+        columnIndex = 1; // ستون تاریخ تحویل
+      } else if (column === 'meetings') {
+        columnIndex = 2; // ستون تعداد جلسات
+      }
+
+      // مرتب‌سازی ردیف‌ها
+      rows.sort((a, b) => {
+        let aValue = a.cells[columnIndex].textContent.trim();
+        let bValue = b.cells[columnIndex].textContent.trim();
+
+        // برای ستون تاریخ
+        if (column === 'date') {
+          // تبدیل تاریخ به قابل مقایسه
+          const aDate = new Date(aValue);
+          const bDate = new Date(bValue);
+          
+          if (currentSort.direction === 'asc') {
+            return aDate - bDate;
+          } else {
+            return bDate - aDate;
+          }
+        }
+
+        // برای ستون تعداد جلسات
+        if (column === 'meetings') {
+          // استخراج عدد از متن
+          const aNum = parseInt(aValue.match(/\d+/)?.[0] || '0');
+          const bNum = parseInt(bValue.match(/\d+/)?.[0] || '0');
+          
+          if (currentSort.direction === 'asc') {
+            return aNum - bNum;
+          } else {
+            return bNum - aNum;
+          }
+        }
+      });
+
+      // پاک کردن جدول و اضافه کردن ردیف‌های مرتب شده
+      table.innerHTML = '';
+      rows.forEach((row, index) => {
+        // به‌روزرسانی شماره ردیف
+        row.cells[0].textContent = index + 1;
+        table.appendChild(row);
+      });
+
+      // به‌روزرسانی آیکون‌های مرتب‌سازی
+      updateSortIcons(column);
+    }
+
+    // تابع به‌روزرسانی آیکون‌های مرتب‌سازی
+    function updateSortIcons(activeColumn) {
+      // ریست کردن همه آیکون‌ها
+      const dateIcon = document.getElementById('date-sort-icon');
+      const meetingsIcon = document.getElementById('meetings-sort-icon');
+      
+      if (dateIcon) dateIcon.className = 'fas fa-sort ml-1';
+      if (meetingsIcon) meetingsIcon.className = 'fas fa-sort ml-1';
+
+      // تنظیم آیکون ستون فعال
+      const activeIcon = document.getElementById(activeColumn + '-sort-icon');
+      if (activeIcon) {
+        if (currentSort.direction === 'asc') {
+          activeIcon.className = 'fas fa-sort-up ml-1 text-primary';
+        } else {
+          activeIcon.className = 'fas fa-sort-down ml-1 text-primary';
+        }
+      }
+    }
+
+    // اضافه کردن استایل hover برای ستون‌های قابل مرتب‌سازی
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortableHeaders = document.querySelectorAll('th[onclick]');
+      sortableHeaders.forEach(header => {
+        header.addEventListener('mouseenter', function() {
+          this.style.backgroundColor = '#f8f9fa';
+        });
+        header.addEventListener('mouseleave', function() {
+          this.style.backgroundColor = '';
+        });
+      });
+    });
+  </script>
+{% endblock %}

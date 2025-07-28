@@ -1,0 +1,357 @@
+{% extends 'registration/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block main %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-edit"></i> {{ title }}
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left"></i> بازگشت
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if excel_data %}
+                <!-- نمایش مقایسه داده‌ها -->
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-info-circle"></i> مقای��ه داده‌های Excel با سیستم</h5>
+                    <p class="mb-3">می‌توانید داده‌های Excel را به سیستم اعمال کنید یا به صورت دستی ویرایش کنید.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-file-excel"></i> داده‌های Excel:</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>نام کالا:</strong> {{ excel_data.item_name|default:"---" }}</li>
+                                <li><strong>نوع کالا:</strong> {{ excel_data.item_type|default:"---" }}</li>
+                                <li><strong>برند:</strong> {{ excel_data.brand|default:"---" }}</li>
+                                <li><strong>پیکربندی:</strong> {{ excel_data.configuration|default:"---" }}</li>
+                                <li><strong>وضعیت:</strong> {{ excel_data.status_main|default:"---" }}{% if excel_data.status_sub %} - {{ excel_data.status_sub }}{% endif %}</li>
+                                <li><strong>شماره سریال:</strong> {{ excel_data.serial_number|default:"---" }}</li>
+                                <li><strong>کد محصول:</strong> {{ excel_data.product_code|default:"---" }}</li>
+                                <li><strong>تعداد:</strong> {{ excel_data.number }}</li>
+                                <li><strong>دارنده:</strong> {{ excel_data.holder_info|default:"---" }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success"><i class="fas fa-database"></i> داده‌های فعلی سیستم:</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>نام کالا:</strong> {{ item.Technical_items|default:"---" }}</li>
+                                <li><strong>نوع کالا:</strong> {{ item.get_type_Item_display|default:"---" }}</li>
+                                <li><strong>برند:</strong> {{ item.brand|default:"---" }}</li>
+                                <li><strong>پیکربندی:</strong> {{ item.Configuration|default:"---" }}</li>
+                                <li><strong>وضعیت:</strong> {{ item.get_status_item_display|default:"---" }}{% if item.status_sub_item %} - {{ item.get_status_sub_item_display }}{% endif %}</li>
+                                <li><strong>شماره سریال:</strong> {{ item.serial_number|default:"---" }}</li>
+                                <li><strong>کد محصول:</strong> {{ item.Product_code|default:"---" }}</li>
+                                <li><strong>تعداد:</strong> {{ item.Number }}</li>
+                                <li><strong>دارنده:</strong> {% if item.PersonalInfo %}{{ item.PersonalInfo.name }} {{ item.PersonalInfo.family }} ({{ item.PersonalInfo.Personnel_number }}){% else %}---{% endif %}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    
+                </div>
+                {% endif %}
+
+                <!-- فرم ویرایش -->
+                <form method="post" id="edit-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <!-- نام کالا -->
+                            <div class="form-group">
+                                <label for="{{ form.Technical_items.id_for_label }}">{{ form.Technical_items.label }}</label>
+                                {{ form.Technical_items }}
+                                {% if form.Technical_items.help_text %}
+                                    <small class="form-text text-muted">{{ form.Technical_items.help_text }}</small>
+                                {% endif %}
+                                {% if form.Technical_items.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.Technical_items.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- نوع کالا -->
+                            <div class="form-group">
+                                <label for="{{ form.type_Item.id_for_label }}">{{ form.type_Item.label }}</label>
+                                {{ form.type_Item }}
+                                {% if form.type_Item.help_text %}
+                                    <small class="form-text text-muted">{{ form.type_Item.help_text }}</small>
+                                {% endif %}
+                                {% if form.type_Item.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.type_Item.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- برند -->
+                            <div class="form-group">
+                                <label for="{{ form.brand.id_for_label }}">{{ form.brand.label }}</label>
+                                {{ form.brand }}
+                                {% if form.brand.help_text %}
+                                    <small class="form-text text-muted">{{ form.brand.help_text }}</small>
+                                {% endif %}
+                                {% if form.brand.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.brand.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- شماره سریال -->
+                            <div class="form-group">
+                                <label for="{{ form.serial_number.id_for_label }}">{{ form.serial_number.label }}</label>
+                                {{ form.serial_number }}
+                                {% if form.serial_number.help_text %}
+                                    <small class="form-text text-muted">{{ form.serial_number.help_text }}</small>
+                                {% endif %}
+                                {% if form.serial_number.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.serial_number.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- کد محصول -->
+                            <div class="form-group">
+                                <label for="{{ form.Product_code.id_for_label }}">{{ form.Product_code.label }}</label>
+                                {{ form.Product_code }}
+                                {% if form.Product_code.help_text %}
+                                    <small class="form-text text-muted">{{ form.Product_code.help_text }}</small>
+                                {% endif %}
+                                {% if form.Product_code.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.Product_code.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- وضعیت کالا -->
+                            <div class="form-group">
+                                <label for="{{ form.status_item.id_for_label }}">{{ form.status_item.label }}</label>
+                                {{ form.status_item }}
+                                {% if form.status_item.help_text %}
+                                    <small class="form-text text-muted">{{ form.status_item.help_text }}</small>
+                                {% endif %}
+                                {% if form.status_item.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.status_item.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- زیر وضعیت -->
+                            <div class="form-group">
+                                <label for="{{ form.status_sub_item.id_for_label }}">{{ form.status_sub_item.label }}</label>
+                                {{ form.status_sub_item }}
+                                {% if form.status_sub_item.help_text %}
+                                    <small class="form-text text-muted">{{ form.status_sub_item.help_text }}</small>
+                                {% endif %}
+                                {% if form.status_sub_item.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.status_sub_item.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- دارنده حساب -->
+                            <div class="form-group">
+                                <label for="{{ form.PersonalInfo.id_for_label }}">{{ form.PersonalInfo.label }}</label>
+                                {{ form.PersonalInfo }}
+                                {% if form.PersonalInfo.help_text %}
+                                    <small class="form-text text-muted">{{ form.PersonalInfo.help_text }}</small>
+                                {% endif %}
+                                {% if form.PersonalInfo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.PersonalInfo.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- پیکربندی -->
+                    <div class="form-group">
+                        <label for="{{ form.Configuration.id_for_label }}">{{ form.Configuration.label }}</label>
+                        {{ form.Configuration }}
+                        {% if form.Configuration.help_text %}
+                            <small class="form-text text-muted">{{ form.Configuration.help_text }}</small>
+                        {% endif %}
+                        {% if form.Configuration.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.Configuration.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- دکمه‌های عملیات -->
+                    <div class="form-group text-center">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-save"></i> ذخیره تغییرات
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg ml-2" onclick="window.history.back()">
+                            <i class="fas fa-times"></i> انصراف
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // مدیریت تغییر وضعیت اصلی برای به‌روزرسانی زیر وضعیت‌ها
+    const statusSelect = document.getElementById('id_status_item');
+    const subStatusSelect = document.getElementById('id_status_sub_item');
+    
+    if (statusSelect && subStatusSelect) {
+        statusSelect.addEventListener('change', function() {
+            const selectedStatus = this.value;
+            
+            // پاک کردن گزینه‌های قبلی
+            subStatusSelect.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            if (selectedStatus) {
+                // درخواست AJAX برای دریافت گزینه‌های زیر وضعیت
+                fetch(`{% url 'account:get_sub_status_options_for_edit' %}?status_item=${selectedStatus}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.options.forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option.value;
+                            optionElement.textContent = option.label;
+                            subStatusSelect.appendChild(optionElement);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('خطا در دریافت گزینه‌های زیر وضعیت:', error);
+                    });
+            }
+        });
+    }
+
+    {% if excel_data %}
+    // مدیریت دکمه اعمال داده‌های Excel
+    const applyExcelBtn = document.getElementById('apply-excel-data');
+    if (applyExcelBtn) {
+        applyExcelBtn.addEventListener('click', function() {
+            const excelData = {{ excel_data|safe }};
+            
+            // اعمال داده‌های Excel به فرم
+            if (excelData.item_name) {
+                document.getElementById('id_Technical_items').value = excelData.item_name;
+            }
+            
+            if (excelData.item_type) {
+                const typeSelect = document.getElementById('id_type_Item');
+                const typeMapping = {
+                    'فنی': 'Technical',
+                    'غیر فنی': 'Non-technical'
+                };
+                const englishType = typeMapping[excelData.item_type] || excelData.item_type;
+                typeSelect.value = englishType;
+            }
+            
+            if (excelData.brand) {
+                document.getElementById('id_brand').value = excelData.brand;
+            }
+            
+            if (excelData.configuration) {
+                document.getElementById('id_Configuration').value = excelData.configuration;
+            }
+            
+            if (excelData.status_main) {
+                const statusSelect = document.getElementById('id_status_item');
+                const statusMapping = {
+                    '(تعمیری)سخت افزار': 'hardware',
+                    'تحویل': 'Delivery',
+                    'انبار': 'warehouse'
+                };
+                const englishStatus = statusMapping[excelData.status_main] || excelData.status_main;
+                statusSelect.value = englishStatus;
+                
+                // تریگر کردن تغییر برای به‌روزرسانی زیر وضعیت‌ها
+                statusSelect.dispatchEvent(new Event('change'));
+                
+                // تنظیم زیر وضعیت بعد از کمی تاخیر
+                if (excelData.status_sub) {
+                    setTimeout(() => {
+                        const subStatusSelect = document.getElementById('id_status_sub_item');
+                        const subStatusMapping = {
+                            'تعمیر': 'repair',
+                            'ارتقا': 'upgrade',
+                            'خارج': 'external',
+                            'داخل': 'internal',
+                            'آماده بکار': 'ready',
+                            'عودتی سالم': 'returned_good',
+                            'عودتی فرسوده': 'returned_worn'
+                        };
+                        const englishSubStatus = subStatusMapping[excelData.status_sub] || excelData.status_sub;
+                        subStatusSelect.value = englishSubStatus;
+                    }, 500);
+                }
+            }
+            
+            if (excelData.serial_number) {
+                document.getElementById('id_serial_number').value = excelData.serial_number;
+            }
+            
+            if (excelData.product_code) {
+                document.getElementById('id_Product_code').value = excelData.product_code;
+            }
+            
+            // نمایش پیام موفقیت
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check"></i> داده‌های Excel به فرم اعمال شد.
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            `;
+            
+            const cardBody = document.querySelector('.card-body');
+            cardBody.insertBefore(alertDiv, cardBody.firstChild);
+            
+            // حذف خودکار پیام بعد از 3 ثانیه
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        });
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

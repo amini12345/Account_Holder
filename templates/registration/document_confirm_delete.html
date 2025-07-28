@@ -1,0 +1,142 @@
+{% extends 'registration/base.html' %}
+{% load static %}
+
+{% block title %}تایید حذف مدرک{% endblock %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-trash"></i> تایید حذف مدرک
+                        </h3>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <h5><i class="icon fas fa-exclamation-triangle"></i> هشدار!</h5>
+                            آیا مطمئن هستید که می‌خواهید این مدرک را حذف کنید؟ این عملیات قابل بازگشت نیست.
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">جزئیات مدرک:</h5>
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>فرد مربوطه:</strong></td>
+                                            <td>
+                                                {% if object.PersonalInfo %}
+                                                    {{ object.PersonalInfo.name }} {{ object.PersonalInfo.family }}
+                                                {% else %}
+                                                    تعریف نشده
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>نوع آموزش:</strong></td>
+                                            <td>
+                                                {% if object.Type_of_training == 'online' %}
+                                                    <span class="badge badge-info">آنلاین</span>
+                                                {% elif object.Type_of_training == 'offline' %}
+                                                    <span class="badge badge-success">حضوری</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">{{ object.Type_of_training }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% if object.Course_name %}
+                                        <tr>
+                                            <td><strong>نام دوره:</strong></td>
+                                            <td><code>{{ object.Course_name }}</code></td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if object.Institute_name %}
+                                        <tr>
+                                            <td><strong>نام موسسه:</strong></td>
+                                            <td>{{ object.Institute_name }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if object.Course_duration %}
+                                        <tr>
+                                            <td><strong>مدت دوره:</strong></td>
+                                            <td>
+                                                <span class="badge badge-primary">{{ object.Course_duration }} ساعت</span>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if object.Certificate_number %}
+                                        <tr>
+                                            <td><strong>شماره گواهینامه:</strong></td>
+                                            <td><code>{{ object.Certificate_number }}</code></td>
+                                        </tr>
+                                        {% endif %}
+                                        <tr>
+                                            <td><strong>تاریخ ثبت:</strong></td>
+                                            <td><code>{{ object.register_date|date:"Y/m/d H:i" }}</code></td>
+                                        </tr>
+                                        {% if object.jinfo %}
+                                        <tr>
+                                            <td><strong>تاریخ شمسی:</strong></td>
+                                            <td><code>{{ object.jinfo }}</code></td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> بله، حذف کن
+                            </button>
+                            <a href="{% url 'account:documents_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.card {
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+}
+
+.btn {
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.table td {
+    border-top: none;
+    padding: 0.5rem;
+}
+
+.table tr:first-child td {
+    border-top: 1px solid #dee2e6;
+}
+
+.alert {
+    border-radius: 0.25rem;
+}
+
+.badge {
+    font-size: 0.875em;
+}
+
+.card-title {
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
