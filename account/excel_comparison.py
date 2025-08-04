@@ -111,9 +111,7 @@ def compare_excel_with_items(request):
         excel_product_codes = set()
         excel_serial_numbers = set()
         
-        # دیکشنری برای گروه‌بندی کالاهای غیر فنی بر اساس کد محصول
-        non_technical_groups = {}
-        
+                
         # خواندن داده‌ها از ردیف دوم (ردیف اول هدر است)
         for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             if not any(row):  # اگر ردیف خالی باشد
@@ -155,16 +153,17 @@ def compare_excel_with_items(request):
                     })
                     continue
                 
+                # تشخیص نوع کالا از Excel
+                excel_item_type_raw = item_type  # مقدار خام از Excel
+                
                 # اضافه کردن به مجموعه‌های Excel
                 excel_product_codes.add(product_code)
-                if serial_number:
+                # فقط برای کالاهای فنی شماره سریال را اضافه کن
+                if serial_number and (excel_item_type_raw and excel_item_type_raw.lower() in ['technical', 'فنی']):
                     excel_serial_numbers.add(serial_number)
                 
                 # جستجوی کالا در سیستم بر اساس نوع کالا
                 existing_item = None
-                
-                # تشخیص نوع کالا از Excel
-                excel_item_type_raw = item_type  # مقدار خام از Excel
                 is_technical = False
                 
                 # تشخیص اینکه کالا فنی است یا غیر فنی
@@ -225,6 +224,9 @@ def compare_excel_with_items(request):
                     return value
 
                 # ساختار داده Excel با تبدیل به نمایش فارسی
+                # برای کالاهای غیر فنی، شماره سریال همیشه None است
+                final_serial_number = serial_number if is_technical else None
+                
                 excel_item_data = {
                     'row': row_num,
                     'item_name': item_name,
@@ -233,7 +235,7 @@ def compare_excel_with_items(request):
                     'configuration': configuration,
                     'status_main': convert_excel_to_display('status_main', status_main),
                     'status_sub': convert_excel_to_display('status_sub', status_sub),
-                    'serial_number': serial_number,
+                    'serial_number': final_serial_number,
                     'product_code': product_code,
                     'holder_info': holder_info,
                     'number': int(number) if number and str(number).isdigit() else 1,
@@ -335,17 +337,76 @@ def compare_excel_with_items(request):
                         comparison_results['new_items'].append(excel_item_data)
                         
                 else:
-                    # کالاهای غیر فنی: فقط بر اساس کد محصول (هیچ وقت سریال ندارند)
-                    # اضافه به گروه برای پردازش بعدی
-                    if product_code not in non_technical_groups:
-                        non_technical_groups[product_code] = {
-                            'items': [],
-                            'total_count': 0,
-                            'sample_data': excel_item_data.copy()
-                        }
+                    # کالاهای غیر فنی: پردازش فوری هر کالا به صورت جداگانه
+                    # برای کالاهای غیر ��نی، فقط بر اساس کد محصول جستجو می‌کنیم
+                    existing_items = Items.objects.filter(
+                        Product_code=product_code,
+                        type_Item='Non-technical'
+                    )
                     
-                    non_technical_groups[product_code]['items'].append(excel_item_data)
-                    non_technical_groups[product_code]['total_count'] += excel_item_data['number']
+                    if existing_items.exists():
+                        # کالا در سیستم موجود است - هر کالا را جداگانه بررسی می‌کنیم
+                        # آیتم نماینده از سیستم
+                        representative_item = existing_items.first()
+                        system_item_data = {
+                            'id': representative_item.id,
+                            'item_name': representative_item.Technical_items,
+                            'item_type': representative_item.get_type_Item_display(),
+                            'brand': representative_item.brand,
+                            'configuration': representative_item.Configuration,
+                            'status_main': representative_item.get_status_item_display(),
+                            'status_sub': representative_item.get_status_sub_item_display() if representative_item.status_sub_item else None,
+                            'serial_number': representative_item.serial_number,
+                            'product_code': representative_item.Product_code,
+                            'holder_info': f"{representative_item.PersonalInfo.name} {representative_item.PersonalInfo.family} ({representative_item.PersonalInfo.Personnel_number})" if representative_item.PersonalInfo else None,
+                            'number': representative_item.Number
+                        }
+                        
+                        # بررسی تفاوت‌ها برای کالاهای غیر فنی
+                        differences = []
+                        field_comparisons = [
+                            ('item_name', Items._meta.get_field('Technical_items').verbose_name),
+                            ('item_type', Items._meta.get_field('type_Item').verbose_name),
+                            ('brand', Items._meta.get_field('brand').verbose_name),
+                            ('configuration', Items._meta.get_field('Configuration').verbose_name),
+                            ('status_main', Items._meta.get_field('status_item').verbose_name),
+                            ('status_sub', Items._meta.get_field('status_sub_item').verbose_name),
+                            ('product_code', Items._meta.get_field('Product_code').verbose_name),
+                            ('number', Items._meta.get_field('Number').verbose_name)
+                        ]
+                        
+                        for field, label in field_comparisons:
+                            excel_value = excel_item_data.get(field)
+                            system_value = system_item_data.get(field)
+                            
+                            if excel_value is None:
+                                excel_value = ''
+                            if system_value is None:
+                                system_value = ''
+                                
+                            if str(excel_value).strip() != str(system_value).strip():
+                                differences.append({
+                                    'field': field,
+                                    'field_label': label,
+                                    'excel_value': excel_value,
+                                    'system_value': system_value
+                                })
+                        
+                        if differences:
+                            comparison_results['differences'].append({
+                                'excel_data': excel_item_data,
+                                'system_data': system_item_data,
+                                'differences': differences
+                            })
+                        else:
+                            comparison_results['existing_items'].append({
+                                'excel_data': excel_item_data,
+                                'system_data': system_item_data
+                            })
+                    else:
+                        # کالای غیر فنی جدید
+                        excel_item_data['new_item_reason'] = f"کالا جدید است - کد محصول '{product_code}' در کالاهای غیر فنی موجود نیست"
+                        comparison_results['new_items'].append(excel_item_data)
                     
             except Exception as e:
                 comparison_results['excel_errors'].append({
@@ -354,81 +415,7 @@ def compare_excel_with_items(request):
                     'data': {}
                 })
         
-        # پردازش گروه‌های کالاهای غیر فنی بدون سریال
-        for product_code, group_data in non_technical_groups.items():
-            # بررسی وجود کالا با همین کد محصول در سیستم
-            existing_items = Items.objects.filter(
-                Product_code=product_code,
-                type_Item='Non-technical'
-            )
-            
-            if existing_items.exists():
-                # کالا در سیستم موجود است - مقایسه مجموع تعداد
-                total_system_count = sum(item.Number for item in existing_items)
-                excel_total_count = group_data['total_count']
                 
-                # استفاده از نمونه داده برای نمایش
-                sample_data = group_data['sample_data']
-                sample_data['number'] = excel_total_count  # تعداد کل
-                
-                # آیتم نماینده از سیستم
-                representative_item = existing_items.first()
-                system_item_data = {
-                    'id': representative_item.id,
-                    'item_name': representative_item.Technical_items,
-                    'item_type': representative_item.get_type_Item_display(),
-                    'brand': representative_item.brand,
-                    'configuration': representative_item.Configuration,
-                    'status_main': representative_item.get_status_item_display(),
-                    'status_sub': representative_item.get_status_sub_item_display() if representative_item.status_sub_item else None,
-                    'serial_number': representative_item.serial_number,
-                    'product_code': representative_item.Product_code,
-                    'holder_info': f"{representative_item.PersonalInfo.name} {representative_item.PersonalInfo.family} ({representative_item.PersonalInfo.Personnel_number})" if representative_item.PersonalInfo else None,
-                    'number': total_system_count
-                }
-                
-                # بررسی تفاوت‌ها (فقط کد محصول و تعداد)
-                differences = []
-                field_comparisons = [
-                    ('product_code', Items._meta.get_field('Product_code').verbose_name),
-                    ('number', Items._meta.get_field('Number').verbose_name)
-                ]
-                
-                for field, label in field_comparisons:
-                    excel_value = sample_data.get(field)
-                    system_value = system_item_data.get(field)
-                    
-                    if excel_value is None:
-                        excel_value = ''
-                    if system_value is None:
-                        system_value = ''
-                        
-                    if str(excel_value).strip() != str(system_value).strip():
-                        differences.append({
-                            'field': field,
-                            'field_label': label,
-                            'excel_value': excel_value,
-                            'system_value': system_value
-                        })
-                
-                if differences:
-                    comparison_results['differences'].append({
-                        'excel_data': sample_data,
-                        'system_data': system_item_data,
-                        'differences': differences
-                    })
-                else:
-                    comparison_results['existing_items'].append({
-                        'excel_data': sample_data,
-                        'system_data': system_item_data
-                    })
-            else:
-                # کالای غیر فنی جدید - تعداد کل را نمایش بده
-                sample_data = group_data['sample_data']
-                sample_data['number'] = group_data['total_count']
-                sample_data['new_item_reason'] = f"کالا جدید است - کد محصول '{product_code}' در کالاهای غیر فنی موجود نیست (مجموع {group_data['total_count']} عدد)"
-                comparison_results['new_items'].append(sample_data)
-        
         # یافتن کالاهایی که فقط در سیستم هستند
         if comparison_type in ['all', 'system_only']:
             all_system_items = Items.objects.all()
@@ -436,10 +423,17 @@ def compare_excel_with_items(request):
                 # بررسی اینکه آیا این کالا در Excel موجود است یا نه
                 found_in_excel = False
                 
-                if system_item.serial_number and system_item.serial_number in excel_serial_numbers:
-                    found_in_excel = True
-                elif system_item.Product_code in excel_product_codes:
-                    found_in_excel = True
+                # برای کالاهای فنی: بررسی بر اساس شماره سریال یا کد محصول
+                if system_item.type_Item == 'Technical':
+                    if system_item.serial_number and system_item.serial_number in excel_serial_numbers:
+                        found_in_excel = True
+                    elif system_item.Product_code in excel_product_codes:
+                        found_in_excel = True
+                
+                # برای کالاهای غیر فنی: فقط بررسی بر اساس کد محصول
+                elif system_item.type_Item == 'Non-technical':
+                    if system_item.Product_code in excel_product_codes:
+                        found_in_excel = True
                 
                 if not found_in_excel:
                     comparison_results['system_only'].append({

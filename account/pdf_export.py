@@ -10,6 +10,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.pdfbase import pdfmetrics
+from extensions.utils import jalali_converter
 
 # Import های سازگار با نسخه‌های مختلف ReportLab
 try:
@@ -227,7 +228,7 @@ def export_pdf(request):
     story.append(title)
     
     # اطلاعات گزارش
-    report_info = f"تاریخ تولید گزارش: {datetime.now().strftime('%Y/%m/%d %H:%M')}"
+    report_info = f"تاریخ تولید گزارش: {jalali_converter(datetime.now())}"
     if queryset.count() > 0:
         report_info += f" | تعداد کالاها: {queryset.count()}"
     
@@ -543,7 +544,7 @@ def generate_pdf(request):
     story.append(title)
     
     # اطلاعات گزارش
-    report_info = f"تاریخ تولید گزارش: {datetime.now().strftime('%Y/%m/%d %H:%M')}"
+    report_info = f"تاریخ تولید گزارش: {jalali_converter(datetime.now())}"
     if queryset.count() > 0:
         report_info += f" | تعداد کالاها: {queryset.count()}"
     
@@ -640,7 +641,7 @@ def get_pdf_field_value(item, field_key, row_index):
         return str(item.jinfo)
     elif field_key == 'update_date':
         if item.update_date:
-            return item.update_date.strftime('%Y/%m/%d %H:%M')
+            return jalali_converter(item.update_date)
         else:
             return 'ندارد'
     else:

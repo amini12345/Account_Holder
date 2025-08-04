@@ -61,7 +61,7 @@ class Items(models.Model):
     status_sub_item = models.CharField(max_length=50,choices=[choice for sublist in STATUS_SUB_MAPPING.values() for choice in sublist],blank=True,null=True,verbose_name="زیر مجموعه وضعیت")
     brand = models.CharField(max_length=100, verbose_name="برند", blank=True, null=True)
     Configuration = models.TextField(verbose_name="پیکربندی", blank=True, null=True)
-    serial_number = models.CharField(max_length=100, unique=True,blank=True, null=True,verbose_name="شماره سریال") 
+    serial_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="شماره سریال") 
     Product_code = models.CharField(max_length=100, verbose_name="کد محصول") 
     register_date = models.DateTimeField(auto_now_add=True) 
     update_date = models.DateTimeField(default=timezone.now,verbose_name="تاریخ بروزرسانی")    
@@ -70,12 +70,25 @@ class Items(models.Model):
     def clean(self):
         """
         اعتبارسنجی مدل: بررسی اینکه زیرمجموعه انتخاب‌شده، با وضعیت اصلی مطابقت دارد.
+        و بررسی منحصر به فرد بودن شماره سریال برای کالاهای فنی.
         """
         if self.status_item and self.status_sub_item:
             valid_sub_choices = self.STATUS_SUB_MAPPING.get(self.status_item, [])
             if self.status_sub_item not in [choice[0] for choice in valid_sub_choices]:
                 raise ValidationError(
                     {'status_sub_item': 'زیر مجموعه انتخاب‌شده معتبر نیست.'}
+                )
+        
+        # بررسی منحصر به فرد بودن شماره سریال فقط برای کالاهای فنی
+        if self.type_Item == 'Technical' and self.serial_number:
+            # بررسی تکراری بودن شماره سریال
+            existing_items = Items.objects.filter(serial_number=self.serial_number)
+            if self.pk:  # اگر در حال ویرایش است
+                existing_items = existing_items.exclude(pk=self.pk)
+            
+            if existing_items.exists():
+                raise ValidationError(
+                    {'serial_number': 'شماره سریال برای کالاهای فنی باید منحصر به فرد باشد.'}
                 )
 
     def save(self, *args, **kwargs):
@@ -210,6 +223,7 @@ class ItemChangeRequest(models.Model):
     ACTION_CHOICES = [
         ('edit', 'ویرایش'),
         ('transfer', 'انتقال'),
+        ('receive', 'دریافت'),
         ('assign', 'تخصیص'),
         ('remove', 'حذف'),
         ('delete', 'حذف'),

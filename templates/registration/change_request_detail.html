@@ -5,78 +5,416 @@
 {% endblock %}
 
 {% block extra_css %}
+<!-- Animate.css for animations -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 <style>
+/* صفحه کلی - Override AdminLTE styles */
+.content-wrapper {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+    font-family: 'Vazirmatn', 'Tahoma', sans-serif !important;
+    min-height: 100vh !important;
+}
+
+.main-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* وضعیت درخواست */
 .status-badge {
-    font-size: 1rem;
-    padding: 0.5rem 1rem;
+    font-size: 1.1rem;
+    padding: 0.7rem 1.5rem;
+    border-radius: 25px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
 .status-pending {
-    background-color: #ffc107;
-    color: #212529;
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    color: #2d3436;
+    border: 2px solid #fdcb6e;
 }
 
 .status-approved {
-    background-color: #28a745;
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
     color: white;
+    border: 2px solid #00b894;
 }
 
 .status-rejected {
-    background-color: #dc3545;
+    background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
     color: white;
+    border: 2px solid #d63031;
 }
 
-.change-item {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
+/* باکس اطلاعات کالا */
+.item-info-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.item-info-box::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.item-info-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: center;
+    border-bottom: 2px solid rgba(255,255,255,0.3);
+    padding-bottom: 0.8rem;
+    position: relative;
+    z-index: 2;
+}
+
+.item-detail {
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 0.8rem;
+    margin-bottom: 0.6rem;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.item-detail:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.item-detail-label {
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+    display: inline-block;
+    min-width: 140px;
+    font-size: 1rem;
+}
+
+.item-detail-value {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* باکس جریان کار */
+.workflow-box {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: none;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.workflow-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #2d3436;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 2px solid #6c5ce7;
+    position: relative;
+}
+
+.workflow-title::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, #a29bfe, #6c5ce7);
+    border-radius: 2px;
+}
+
+/* ستون‌های جریان کار */
+.workflow-column {
+    text-align: center;
     padding: 1rem;
-    margin-bottom: 0.5rem;
+    border-radius: 15px;
+    margin-bottom: 1rem;
+    position: relative;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
 }
 
-.change-field {
+.workflow-column:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.action-taker {
+    background: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+    color: #2d3436;
+    border-color: #fd79a8;
+}
+
+.previous-owner {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+    border-color: #74b9ff;
+}
+
+.item-receiver {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+    border-color: #00b894;
+}
+
+.workflow-column h5 {
     font-weight: bold;
-    color: #495057;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.change-arrow {
-    color: #6c757d;
-    margin: 0 0.5rem;
-}
-
-.old-value {
-    color: #dc3545;
-    text-decoration: line-through;
-}
-
-.new-value {
-    color: #28a745;
-    font-weight: bold;
-}
-
-.info-section {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
+.person-info {
+    background: rgba(255,255,255,0.9);
+    border-radius: 15px;
     padding: 1.5rem;
     margin-bottom: 1rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.5);
 }
 
-.section-title {
-    color: #495057;
-    font-weight: bold;
+.person-detail {
+    color: #2d3436;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: right;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.person-detail:hover {
+    background: rgba(108, 92, 231, 0.1);
+    transform: translateX(-5px);
+}
+
+.person-detail i {
+    margin-left: 0.8rem;
+    color: #6c5ce7;
+    font-size: 1.1rem;
+    min-width: 20px;
+}
+
+.person-detail strong {
+    color: #2d3436;
+    margin-left: 0.5rem;
+}
+
+/* فلش‌های جریان کار */
+.workflow-arrow {
+    position: absolute;
+    top: 50%;
+    right: -25px;
+    transform: translateY(-50%);
+    font-size: 2.5rem;
+    color: #6c5ce7;
+    z-index: 10;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(-50%); }
+    40% { transform: translateY(-60%); }
+    60% { transform: translateY(-55%); }
+}
+
+/* دکمه بازگشت */
+.back-button {
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    border: none;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
     margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
+}
+
+.back-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(108, 92, 231, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.back-button i {
+    margin-left: 0.8rem;
+    font-size: 1.2rem;
+}
+
+/* عملیات مدیریتی */
+.admin-operations {
+    background: linear-gradient(135deg, #ffffff 0%, #f1f2f6 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: 2px solid #ddd;
+}
+
+.admin-operations .workflow-title {
+    color: #e17055;
+    border-bottom-color: #e17055;
+}
+
+.admin-operations .workflow-title::after {
+    background: linear-gradient(90deg, #e17055, #d63031);
+}
+
+.btn-admin {
+    padding: 1rem 2.5rem;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    border: none;
+    transition: all 0.3s ease;
+    margin: 0 1rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.btn-admin:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+}
+
+.btn-success.btn-admin {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+}
+
+.btn-danger.btn-admin {
+    background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    border: 2px solid #fdcb6e;
+    border-radius: 15px;
+    color: #2d3436;
+    font-weight: 500;
+    margin-top: 2rem;
+    padding: 1.5rem;
+}
+
+/* ریسپانسیو */
+@media (max-width: 768px) {
+    .workflow-arrow {
+        display: none;
+    }
+    
+    .workflow-column {
+        margin-bottom: 2rem;
+    }
+    
+    .main-container {
+        padding: 1rem;
+    }
+    
+    .item-info-box,
+    .workflow-box,
+    .admin-operations {
+        padding: 2rem;
+    }
+    
+    .item-info-title,
+    .workflow-title {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .person-detail {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .person-detail i {
+        margin: 0 0 0.5rem 0;
+    }
+}
+
+/* انیمیشن ورود */
+.fade-in {
+    animation: fadeIn 0.8s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.8s ease-out;
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.8s ease-out;
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-50px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 </style>
 {% endblock %}
 
 {% block main %}
+<div class="main-container">
   <!-- نمایش پیام‌ها -->
   {% if messages %}
     {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show fade-in" role="alert">
         <i class="icon fas fa-{% if message.tags == 'success' %}check{% elif message.tags == 'error' %}ban{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info{% endif %}"></i>
         {{ message }}
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -86,196 +424,406 @@
     {% endfor %}
   {% endif %}
 
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card card-primary card-outline">
-        <div class="card-header">
-          <h3 class="card-title">
-            <i class="fas fa-exchange-alt mr-2"></i>
-            جزئیات درخواست تغییر کالا
-          </h3>
-          <div class="card-tools">
-            <a href="{% url 'account:change_requests_list' %}" class="btn btn-secondary btn-sm">
-              <i class="fas fa-arrow-left"></i> بازگشت به لیست
-            </a>
-          </div>
+  <!-- دکمه بازگشت -->
+  <a href="{% url 'account:change_requests_list' %}" class="back-button fade-in">
+    <i class="fas fa-arrow-left"></i>
+    بازگشت به لیست درخواست‌ها
+  </a>
+
+  <!-- ��اکس اطلاعات کالا -->
+  <div class="item-info-box fade-in">
+    <div class="item-info-title">
+      <i class="fas fa-box mr-2"></i>
+      اطلاعات کالا
+    </div>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <div class="item-detail">
+          <span class="item-detail-label">نام کالا:</span>
+          <span class="item-detail-value">{{ change_request.item.Technical_items|default:"بدون نام" }}</span>
+        </div>
+        <div class="item-detail">
+          <span class="item-detail-label">شماره سریال:</span>
+          <span class="item-detail-value">{{ change_request.item.serial_number|default:"ندارد" }}</span>
+        </div>
+        <div class="item-detail">
+          <span class="item-detail-label">کد محصول:</span>
+          <span class="item-detail-value">{{ change_request.item.Product_code|default:"ندارد" }}</span>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="item-detail">
+          <span class="item-detail-label">برند:</span>
+          <span class="item-detail-value">{{ change_request.item.brand|default:"ندارد" }}</span>
+        </div>
+        <div class="item-detail">
+          <span class="item-detail-label">وضعیت کالا:</span>
+          <span class="item-detail-value">{{ change_request.item.get_status_item_display }}</span>
+        </div>
+        <div class="item-detail">
+          <span class="item-detail-label">وضعیت درخواست:</span>
+          <span class="badge status-badge status-{{ change_request.status }}">
+            {{ change_request.get_status_display }}
+          </span>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="row">
-    <!-- اطلاعات کلی درخواست -->
-    <div class="col-md-6">
-      <div class="info-section">
-        <h4 class="section-title">
-          <i class="fas fa-info-circle mr-2"></i>
-          اطلاعات درخواست
-        </h4>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>وضعیت:</strong></div>
-          <div class="col-sm-8">
-            <span class="badge status-badge status-{{ change_request.status }}">
-              {{ change_request.get_status_display }}
-            </span>
+  <!-- باکس جریان کار -->
+  <div class="workflow-box slide-in-right">
+    <div class="workflow-title">
+      <i class="fas fa-exchange-alt mr-2"></i>
+      جریان انتقال کالا
+    </div>
+    
+    <div class="row">
+      <!-- ستون اول: اقدام کننده -->
+      <div class="col-md-4">
+        <div class="workflow-column action-taker">
+          <h5>
+            <i class="fas fa-user-plus mr-2"></i>
+            اقدام کننده
+          </h5>
+          <div class="person-info">
+            <div class="person-detail">
+              <i class="fas fa-user"></i>
+              <strong>نام:</strong> {% if admin_user_obj and admin_user_obj.first_name %}{{ admin_user_obj.first_name }}{% else %}{{ change_request.admin_user }}{% endif %}
+            </div>
+            <div class="person-detail">
+              <i class="fas fa-user"></i>
+              <strong>نام خانوادگی:</strong> {% if admin_user_obj and admin_user_obj.last_name %}{{ admin_user_obj.last_name }}{% else %}{{ change_request.admin_user }}{% endif %}
+            </div>
+            <div class="person-detail">
+              <i class="fas fa-calendar"></i>
+              <strong>تاریخ ثبت درخواست:</strong> {{ change_request.jinfo }}
+            </div>
           </div>
-        </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>نوع تغییر:</strong></div>
-          <div class="col-sm-8">
-            <span class="badge badge-info">{{ change_request.get_action_type_display }}</span>
+          <div class="workflow-arrow d-none d-md-block">
+            <i class="fas fa-arrow-left"></i>
           </div>
-        </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>مدیر درخواست‌دهنده:</strong></div>
-          <div class="col-sm-8">{{ change_request.admin_user }}</div>
-        </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>تاریخ ایجاد:</strong></div>
-          <div class="col-sm-8">{{ change_request.jinfo }}</div>
-        </div>
-        
-        {% if change_request.responded_at %}
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>تاریخ پاسخ:</strong></div>
-          <div class="col-sm-8">{{ change_request.responded_at|date:"Y/m/d H:i" }}</div>
-        </div>
-        {% endif %}
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>توضیحات:</strong></div>
-          <div class="col-sm-8">{{ change_request.description|default:"ندارد" }}</div>
         </div>
       </div>
-    </div>
 
-    <!-- اطلاعات کالا و مالک -->
-    <div class="col-md-6">
-      <div class="info-section">
-        <h4 class="section-title">
-          <i class="fas fa-box mr-2"></i>
-          اطلاعات کالا و مالک
-        </h4>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>نام کالا:</strong></div>
-          <div class="col-sm-8">{{ change_request.item.Technical_items|default:"بدون نام" }}</div>
-        </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>شماره س��یال:</strong></div>
-          <div class="col-sm-8">{{ change_request.item.serial_number|default:"ندارد" }}</div>
-        </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>کد محصول:</strong></div>
-          <div class="col-sm-8">{{ change_request.item.Product_code|default:"ندارد" }}</div>
-        </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>مالک فعلی:</strong></div>
-          <div class="col-sm-8">
-            {{ change_request.owner.name }} {{ change_request.owner.family }}<br>
-            <small class="text-muted">{{ change_request.owner.Personnel_number }}</small>
+      <!-- بررسی تغییر دارنده کالا -->
+      {% if 'PersonalInfo' in change_request.proposed_changes %}
+        <!-- ستون دوم: صاحب قبلی -->
+        <div class="col-md-4">
+          <div class="workflow-column previous-owner">
+            <h5>
+              <i class="fas fa-user mr-2"></i>
+              صاحب قبلی
+            </h5>
+            <div class="person-info">
+              {% if change_request.owner %}
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام:</strong> {{ change_request.owner.name|default:"بدون دارنده" }}
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام خانوادگی:</strong> {{ change_request.owner.family|default:"بدون دارنده" }}
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-calendar"></i>
+                  <strong>تاریخ تایید درخواست:</strong> 
+                  {% if responded_at_persian %}
+                    {{ responded_at_persian }}
+                  {% else %}
+                    در انتظار تایید
+                  {% endif %}
+                </div>
+              {% else %}
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام:</strong> بدون دارنده
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام خانوادگی:</strong> بدون دارنده
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-calendar"></i>
+                  <strong>تاریخ تایید درخواست:</strong> در انتظار تایید
+                </div>
+              {% endif %}
+            </div>
+            <div class="workflow-arrow d-none d-md-block">
+              <i class="fas fa-arrow-left"></i>
+            </div>
           </div>
         </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>وضعیت کالا:</strong></div>
-          <div class="col-sm-8">{{ change_request.item.get_status_item_display }}</div>
-        </div>
-        
-        <div class="row mb-3">
-          <div class="col-sm-4"><strong>برند:</strong></div>
-          <div class="col-sm-8">{{ change_request.item.brand|default:"ندارد" }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- تغییرات پیشنهادی -->
-  <div class="row">
-    <div class="col-12">
-      <div class="info-section">
-        <h4 class="section-title">
-          <i class="fas fa-edit mr-2"></i>
-          تغییرات پیشنهادی
-        </h4>
-        
-        {% if change_request.proposed_changes %}
-          {% for field, change in change_request.proposed_changes.items %}
-          <div class="change-item">
-            <div class="row">
-              <div class="col-md-3">
-                <span class="change-field">{{ field }}:</span>
-              </div>
-              <div class="col-md-9">
-                <span class="old-value">{{ change.old|default:"---" }}</span>
-                <span class="change-arrow">
-                  <i class="fas fa-arrow-right"></i>
-                </span>
-                <span class="new-value">{{ change.new|default:"---" }}</span>
+        <!-- ستون سوم: دریافت کننده -->
+        <div class="col-md-4">
+          <div class="workflow-column item-receiver">
+            <h5>
+              <i class="fas fa-user-check mr-2"></i>
+              دریافت کننده کالا
+            </h5>
+            <div class="person-info">
+              {% if new_owner_info %}
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام:</strong> {{ new_owner_info.name|default:"بدون دارنده" }}
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام خانوادگی:</strong> {{ new_owner_info.family|default:"بدون دارنده" }}
+                </div>
+              {% else %}
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام:</strong> بدون دارنده
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام خانوادگی:</strong> بدون دارنده
+                </div>
+              {% endif %}
+              <div class="person-detail">
+                <i class="fas fa-calendar"></i>
+                <strong>تاریخ تایید درخواست:</strong>
+                {% if change_request.status == 'approved' and responded_at_persian %}
+                  {{ responded_at_persian }}
+                {% else %}
+                  در انتظار تایید
+                {% endif %}
               </div>
             </div>
           </div>
-          {% endfor %}
-        {% else %}
-          <p class="text-muted">هیچ تغییر خاصی تعریف نشده است.</p>
-        {% endif %}
-      </div>
+        </div>
+      {% else %}
+        <!-- ستون واحد: دارنده کالا (زمانی که تغییری نکرده) -->
+        <div class="col-md-8">
+          <div class="workflow-column previous-owner">
+            <h5>
+              <i class="fas fa-user mr-2"></i>
+              دارنده کالا
+            </h5>
+            <div class="person-info">
+              {% if change_request.owner %}
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام:</strong> {{ change_request.owner.name|default:"بدون دارنده" }}
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام خانوادگی:</strong> {{ change_request.owner.family|default:"بدون دارنده" }}
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-calendar"></i>
+                  <strong>تاریخ تایید درخواست:</strong> 
+                  {% if responded_at_persian %}
+                    {{ responded_at_persian }}
+                  {% else %}
+                    در انتظار تایید
+                  {% endif %}
+                </div>
+              {% else %}
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام:</strong> بدون دارنده
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-user"></i>
+                  <strong>نام خانوادگی:</strong> بدون دارنده
+                </div>
+                <div class="person-detail">
+                  <i class="fas fa-calendar"></i>
+                  <strong>تاریخ تایید درخواست:</strong> در انتظار تایید
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endif %}
     </div>
   </div>
 
-  <!-- عملیات -->
+  <!-- باکس تغییرات درخواستی -->
+  {% if change_request.proposed_changes %}
+  <div class="workflow-box slide-in-left">
+    <div class="workflow-title">
+      <i class="fas fa-edit mr-2"></i>
+      تغییرات درخواستی
+    </div>
+    
+    <div class="row">
+      {% for field, values in change_request.proposed_changes.items %}
+        <div class="col-md-6 mb-3">
+          <div class="workflow-column" style="background: linear-gradient(135deg, #fab1a0 0%, #e17055 100%); color: white;">
+            <h6 style="margin-bottom: 1rem; font-size: 1.1rem;">
+              <i class="fas fa-arrow-right mr-2"></i>
+              {% if field == 'Technical_items' %}نام کالا
+              {% elif field == 'serial_number' %}شماره سریال
+              {% elif field == 'Product_code' %}کد محصول
+              {% elif field == 'brand' %}برند
+              {% elif field == 'status_item' %}وضعیت کالا
+              {% elif field == 'PersonalInfo' %}دارنده کالا
+              {% elif field == 'status_sub_item' %}زیر مجموعه وضعیت
+              {% elif field == 'type_Item' %}نوع کالا
+              {% elif field == 'Number' %}تعداد کالا
+              {% elif field == 'hardware' %}سخت افزار
+              {% elif field == 'Delivery' %}تحویل
+              {% elif field == 'warehouse' %}انبار
+              {% elif field == 'Configuration' %}پیکربندی
+              {% elif field == 'repair' %}تعمیر
+              {% elif field == 'upgrade' %}ارتقا
+              {% elif field == 'external' %}خارج
+              {% elif field == 'internal' %}داخل
+              {% elif field == 'ready' %}آماده بکار
+              {% elif field == 'returned_good' %}عودتی سالم
+              {% elif field == 'returned_worn' %}عودتی فرسوده
+              {% else %}{% endif %}
+            </h6>
+            <div class="person-info" style="background: rgba(255,255,255,0.95);">
+              <div class="person-detail" style="justify-content: center; margin-bottom: 0.5rem;">
+                <i class="fas fa-times-circle" style="color: #d63031;"></i>
+                <strong style="color: #d63031;">قبل:</strong>
+                <span style="color: #2d3436;">
+                  {% if values.old %}
+                    {% if field == 'status_item' %}
+                      {% if values.old == 'hardware' %}سخت افزار
+                      {% elif values.old == 'Delivery' %}تحویل
+                      {% elif values.old == 'warehouse' %}انبار
+                      {% elif values.old == 'Configuration' %}پیکربندی
+                      {% elif values.old == 'repair' %}تعمیر
+                      {% elif values.old == 'upgrade' %}ارتقا
+                      {% elif values.old == 'external' %}خارج
+                      {% elif values.old == 'internal' %}داخل
+                      {% elif values.old == 'ready' %}آماده بکار
+                      {% elif values.old == 'returned_good' %}عودتی سالم
+                      {% elif values.old == 'returned_worn' %}عودتی فرسوده
+                      {% else %}{{ values.old }}
+                      {% endif %}
+                    {% elif field == 'status_sub_item' %}
+                      {% if values.old == 'repair' %}تعمیر
+                      {% elif values.old == 'upgrade' %}ارتقا
+                      {% elif values.old == 'external' %}خارج
+                      {% elif values.old == 'internal' %}داخل
+                      {% elif values.old == 'ready' %}آماده بکار
+                      {% elif values.old == 'returned_good' %}عودتی سالم
+                      {% elif values.old == 'returned_worn' %}عودتی فرسوده
+                      {% else %}{{ values.old }}
+                      {% endif %}
+                    {% else %}
+                      {{ values.old }}
+                    {% endif %}
+                  {% else %}
+                    ندارد
+                  {% endif %}
+                </span>
+              </div>
+              <div class="person-detail" style="justify-content: center; margin-bottom: 0;">
+                <i class="fas fa-check-circle" style="color: #00b894;"></i>
+                <strong style="color: #00b894;">بعد:</strong>
+                <span style="color: #2d3436;">
+                  {% if values.new %}
+                    {% if field == 'status_item' %}
+                      {% if values.new == 'hardware' %}سخت افزار
+                      {% elif values.new == 'Delivery' %}تحویل
+                      {% elif values.new == 'warehouse' %}انبار
+                      {% elif values.new == 'Configuration' %}پیکربندی
+                      {% elif values.new == 'repair' %}تعمیر
+                      {% elif values.new == 'upgrade' %}ارتقا
+                      {% elif values.new == 'external' %}خارج
+                      {% elif values.new == 'internal' %}داخل
+                      {% elif values.new == 'ready' %}آماده بکار
+                      {% elif values.new == 'returned_good' %}عودتی سالم
+                      {% elif values.new == 'returned_worn' %}عودتی فرسوده
+                      {% else %}{{ values.new }}
+                      {% endif %}
+                    {% elif field == 'status_sub_item' %}
+                      {% if values.new == 'repair' %}تعمیر
+                      {% elif values.new == 'upgrade' %}ارتقا
+                      {% elif values.new == 'external' %}خارج
+                      {% elif values.new == 'internal' %}داخل
+                      {% elif values.new == 'ready' %}آماده بکار
+                      {% elif values.new == 'returned_good' %}عودتی سالم
+                      {% elif values.new == 'returned_worn' %}عودتی فرسوده
+                      {% else %}{{ values.new }}
+                      {% endif %}
+                    {% else %}
+                      {{ values.new }}
+                    {% endif %}
+                  {% else %}
+                    ندارد
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    
+    {% if change_request.description %}
+    <div class="alert alert-info" style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); border: none; color: white; margin-top: 2rem;">
+      <i class="fas fa-info-circle mr-2"></i>
+      <strong>توضیحات:</strong> {{ change_request.description }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- عملیات مدیریتی -->
   {% if change_request.status == 'pending' %}
-  <div class="row">
-    <div class="col-12">
-      <div class="info-section">
-        <h4 class="section-title">
-          <i class="fas fa-cogs mr-2"></i>
-          عملیات
-        </h4>
+  <div class="admin-operations slide-in-left">
+    <div class="workflow-title">
+      <i class="fas fa-cogs mr-2"></i>
+      عملیات مدیریتی
+    </div>
+    
+    <div class="text-center">
+      <div class="btn-group" role="group">
+        <form method="post" action="{% url 'account:approve_change_request_admin' change_request.id %}" 
+              class="d-inline" onsubmit="return confirm('آیا از تایید اجباری این درخواست اطمینان دارید؟ این عمل بدون تایید مالک انجام خواهد شد.')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-admin">
+            <i class="fas fa-check mr-2"></i>
+            تایید اجباری
+          </button>
+        </form>
         
-        <div class="btn-group" role="group">
-          <form method="post" action="{% url 'account:approve_change_request_admin' change_request.id %}" 
-                class="d-inline" onsubmit="return confirm('آیا از تایید اجباری این درخواست اطمینان دارید؟ این عمل بدون تایید مالک انجام خواهد شد.')">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success">
-              <i class="fas fa-check mr-2"></i>
-              تایید اجباری
-            </button>
-          </form>
-          
-          <form method="post" action="{% url 'account:reject_change_request_admin' change_request.id %}" 
-                class="d-inline ml-2" onsubmit="return confirm('آیا از رد این درخواست اطمینان دارید؟')">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">
-              <i class="fas fa-times mr-2"></i>
-              رد درخواست
-            </button>
-          </form>
-        </div>
-        
-        <div class="alert alert-warning mt-3">
-          <i class="fas fa-exclamation-triangle mr-2"></i>
-          <strong>توجه:</strong> تایید اجباری باعث اعمال تغییرات بدون تایید مالک کالا خواهد شد.
-        </div>
+        <form method="post" action="{% url 'account:reject_change_request_admin' change_request.id %}" 
+              class="d-inline" onsubmit="return confirm('آیا از رد این درخواست اطمینان دارید؟')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-admin">
+            <i class="fas fa-times mr-2"></i>
+            رد درخواست
+          </button>
+        </form>
+      </div>
+      
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <strong>توجه:</strong> تایید اجباری باعث اعمال تغییرات بدون تایید مالک کالا خواهد شد.
       </div>
     </div>
   </div>
   {% endif %}
-
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // Add any JavaScript functionality here if needed
+    // Add entrance animations
+    $('.fade-in').each(function(i) {
+        $(this).delay(i * 200).queue(function() {
+            $(this).addClass('animated fadeIn').dequeue();
+        });
+    });
+    
+    $('.slide-in-right').delay(400).queue(function() {
+        $(this).addClass('animated slideInRight').dequeue();
+    });
+    
+    $('.slide-in-left').delay(600).queue(function() {
+        $(this).addClass('animated slideInLeft').dequeue();
+    });
 });
 </script>
 {% endblock %}

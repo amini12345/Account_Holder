@@ -116,20 +116,25 @@ def add_selected_items(request):
                         except PersonalInfo.DoesNotExist:
                             pass
 
-                    # بررسی تکراری بودن شماره سریال
-                    if item_data['serial_number']:
+                    # بررسی تکراری بودن شماره سریال فقط برای کالاهای فنی
+                    if item_data['serial_number'] and model_item_type == 'Technical':
                         if Items.objects.filter(serial_number=item_data['serial_number']).exists():
                             errors.append(f"ردیف {item_data['row']}: شماره سریال '{item_data['serial_number']}' قبلاً در سیستم موجود است")
                             error_count += 1
                             continue
 
                     # ایجاد کالای جدید
+                    # برای کالاهای غیر فنی، شماره سریال همیشه None است
+                    serial_number_value = None
+                    if model_item_type == 'Technical' and item_data['serial_number']:
+                        serial_number_value = item_data['serial_number']
+                    
                     new_item = Items(
                         Technical_items=item_data['item_name'] or None,
                         type_Item=model_item_type,
                         brand=item_data['brand'] or None,
                         Product_code=item_data['product_code'],
-                        serial_number=item_data['serial_number'] or None,
+                        serial_number=serial_number_value,
                         status_item=model_status,
                         status_sub_item=model_sub_status,
                         Number=number,
@@ -193,7 +198,8 @@ def get_item_preview(request):
         if not processed_data['product_code']:
             warnings.append('کد محصول الزامی است')
         
-        if processed_data['serial_number']:
+        # بررسی شماره سریال تکراری فقط برای کالاهای فنی
+        if processed_data['serial_number'] and processed_data['item_type'] in ['فنی', 'Technical']:
             if Items.objects.filter(serial_number=processed_data['serial_number']).exists():
                 warnings.append('شماره سریال تکراری است')
 

@@ -1,5 +1,11 @@
-*{
+/* Apply RTL only to specific elements, not everything */
+body, .main-sidebar, .navbar, .content-wrapper, .main-footer {
     direction: rtl !important;
+}
+
+/* Exclude custom styled elements from global RTL */
+.item-info-box, .workflow-box, .admin-operations, .main-container {
+    direction: rtl;
 }
 .layout-fixed .main-sidebar {
     right: 0;

@@ -10,7 +10,8 @@ from .views import (
 )
 from .viewsreq import (
     ItemUpdateViewWithApproval, change_requests_list, change_request_detail, 
-    approve_change_request_admin, reject_change_request_admin, bulk_transfer_items
+    approve_change_request_admin, reject_change_request_admin, bulk_transfer_items,
+    approve_change_request_user, reject_change_request_user, delete_change_request
 )
 from .excel_import_enhanced import process_excel_enhanced, confirm_import_enhanced, get_sub_status_options
 from .excel_comparison import compare_excel_with_items
@@ -101,5 +102,8 @@ urlpatterns += [
     path("change-request/<int:pk>/", change_request_detail, name="change_request_detail"),
     path("change-request/<int:request_id>/approve/", approve_change_request_admin, name="approve_change_request_admin"),
     path("change-request/<int:request_id>/reject/", reject_change_request_admin, name="reject_change_request_admin"),
+    path("change-request/<int:request_id>/approve-user/", approve_change_request_user, name="approve_change_request_user"),
+    path("change-request/<int:request_id>/reject-user/", reject_change_request_user, name="reject_change_request_user"),
+    path("change-request/<int:request_id>/delete/", delete_change_request, name="delete_change_request"),
     path("bulk-transfer/", bulk_transfer_items, name="bulk_transfer_items"),
 ]

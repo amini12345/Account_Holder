@@ -9,7 +9,12 @@ from .forms import (
 )
 from django.utils.crypto import get_random_string
 from django.utils import timezone
+from .session_utils import HolderSessionManager
 import json
+from shared.approval_utils import (
+    check_both_parties_approved, approve_item_transfer, approve_item_assignment,
+    approve_item_removal, approve_item_edit, reject_related_requests, get_approval_message
+)
 
 def register(request):
     if request.method == 'POST':
@@ -33,8 +38,8 @@ def login(request):
             try:
                 user = PersonalInfo.objects.get(Personnel_number=personnel_number)
                 if user.password == password: 
-                    request.session['user_id'] = user.Personnel_number
-                    request.session['user_name'] = f"{user.name} {user.family}"
+                    # استفاده از Session Manager جدید
+                    HolderSessionManager.login_user(request, user)
                     messages.success(request, f"خوش آمدید {user.name} {user.family}")
                     return redirect('dashboard')
                 else:
@@ -47,16 +52,16 @@ def login(request):
     return render(request, 'holder/login.html', {'form': form})
 
 def logout(request):
-    request.session.flush()
+    HolderSessionManager.logout_user(request)
     messages.success(request, "با موفقیت خارج شدید")
     return redirect('login')
 
 def dashboard(request):
-    if 'user_id' not in request.session:
+    if not HolderSessionManager.is_authenticated(request):
         messages.error(request, "لطفا ابتدا وارد شوید")
         return redirect('login')
     
-    user_id = request.session['user_id']
+    user_id = HolderSessionManager.get_user_id(request)
     try:
         user = PersonalInfo.objects.get(Personnel_number=user_id)
         
@@ -99,10 +104,10 @@ def dashboard(request):
 
 @require_POST
 def add_document(request):
-    if 'user_id' not in request.session:
+    if not HolderSessionManager.is_authenticated(request):
         return JsonResponse({'status': 'error', 'message': 'لطفا ابتدا وارد شوید'})
     
-    user_id = request.session['user_id']
+    user_id = HolderSessionManager.get_user_id(request)
     try:
         user = PersonalInfo.objects.get(Personnel_number=user_id)
         form = DocumentForm(request.POST)
@@ -150,10 +155,10 @@ def add_item(request):
     """
     اضافه کردن کالای جدید
     """
-    if 'user_id' not in request.session:
+    if not HolderSessionManager.is_authenticated(request):
         return JsonResponse({'status': 'error', 'message': 'لطفا ابتدا وارد شوید'})
     
-    user_id = request.session['user_id']
+    user_id = HolderSessionManager.get_user_id(request)
     try:
         user = PersonalInfo.objects.get(Personnel_number=user_id)
         form = ItemForm(request.POST)
@@ -172,10 +177,10 @@ def add_item(request):
 
 @require_POST
 def add_mission(request):
-    if 'user_id' not in request.session:
+    if not HolderSessionManager.is_authenticated(request):
         return JsonResponse({'status': 'error', 'message': 'لطفا ابتدا وارد شوید'})
     
-    user_id = request.session['user_id']
+    user_id = HolderSessionManager.get_user_id(request)
     try:
         user = PersonalInfo.objects.get(Personnel_number=user_id)
         form = MissionForm(request.POST)
@@ -192,10 +197,10 @@ def add_mission(request):
 
 @require_POST
 def add_result(request):
-    if 'user_id' not in request.session:
+    if not HolderSessionManager.is_authenticated(request):
         return JsonResponse({'status': 'error', 'message': 'لطفا ابتدا وارد شوید'})
     
-    user_id = request.session['user_id']
+    user_id = HolderSessionManager.get_user_id(request)
     try:
         user = PersonalInfo.objects.get(Personnel_number=user_id)
         form = ResultForm(request.POST)
@@ -211,130 +216,79 @@ def add_result(request):
     except PersonalInfo.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'کاربر یافت نشد'})
 
+
 @require_POST
 def approve_change_request(request, request_id):
-    """تایید درخواست تغییر کالا"""
-    if 'user_id' not in request.session:
+    """تایید درخواست تغییر کالا - استفاده از shared utilities"""
+    if not HolderSessionManager.is_authenticated(request):
         return JsonResponse({'status': 'error', 'message': 'لطفا ابتدا وارد شوید'})
     
-    user_id = request.session['user_id']
+    user_id = HolderSessionManager.get_user_id(request)
     try:
         user = PersonalInfo.objects.get(Personnel_number=user_id)
         change_request = get_object_or_404(ItemChangeRequest, id=request_id, owner=user, status='pending')
         
-        # اعمال تغییرات
         item = change_request.item
         changes = change_request.proposed_changes
         
-        if change_request.action_type in ['transfer', 'remove']:
-            # انتقال یا حذف کالا از مالک فعلی
-            if 'PersonalInfo' in changes:
-                new_owner_id = changes['PersonalInfo'].get('new_id')
-                new_owner = None
-                
-                if new_owner_id and change_request.action_type == 'transfer':
-                    # پیدا کردن مالک جدید برای انتقال
-                    try:
-                        new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
-                    except PersonalInfo.DoesNotExist:
-                        # اگر مالک جدید یافت نشد، از نام استفاده کن
-                        new_owner_name = changes['PersonalInfo']['new']
-                        if new_owner_name:
-                            name_parts = new_owner_name.split(' ')
-                            if len(name_parts) >= 2:
-                                new_owner = PersonalInfo.objects.filter(
-                                    name=name_parts[0], 
-                                    family=' '.join(name_parts[1:])
-                                ).first()
-                
-                # ایجاد رکورد تاریخچه
-                action_type = 'transfer' if new_owner else 'return'
-                description = f'{"انتقال" if new_owner else "حذف"} تایید شده توسط {user.name} {user.family}'
-                
-                ItemHistory.objects.create(
-                    item=item,
-                    from_person=item.PersonalInfo,
-                    to_person=new_owner,
-                    action_type=action_type,
-                    description=description
-                )
-                
-                # بروزرسانی مالک (حذف یا انتقال)
-                item.PersonalInfo = new_owner
-                item.update_date = timezone.now()
-                item.save()
-                
-        elif change_request.action_type == 'assign':
-            # تخصیص کالا به مالک جدید (کالا قبلاً مالک نداشته)
-            if 'PersonalInfo' in changes:
-                # ایجاد رکورد تاریخچه
-                ItemHistory.objects.create(
-                    item=item,
-                    from_person=None,
-                    to_person=user,
-                    action_type='assign',
-                    description=f'تخصیص تایید شده توسط {user.name} {user.family}'
-                )
-                
-                # بروزرسانی مالک
-                item.PersonalInfo = user
-                item.update_date = timezone.now()
-                item.save()
-                
-        elif change_request.action_type == 'edit':
-            # ویرایش مشخصات کالا
-            for field, change in changes.items():
-                if field == 'PersonalInfo':
-                    # تغییر مالک در ویرایش
-                    new_owner_id = change.get('new_id')
-                    if new_owner_id:
-                        try:
-                            new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
-                            setattr(item, field, new_owner)
-                        except PersonalInfo.DoesNotExist:
-                            # اگر مالک جدید یافت نشد، از نام استفاده کن
-                            new_owner_name = change['new']
-                            if new_owner_name:
-                                name_parts = new_owner_name.split(' ')
-                                if len(name_parts) >= 2:
-                                    new_owner = PersonalInfo.objects.filter(
-                                        name=name_parts[0], 
-                                        family=' '.join(name_parts[1:])
-                                    ).first()
-                                    if new_owner:
-                                        setattr(item, field, new_owner)
-                    else:
-                        # حذف مالک
-                        setattr(item, field, None)
-                else:
-                    # سایر فیلدها
-                    setattr(item, field, change['new'])
-            
-            item.update_date = timezone.now()
-            item.save()
-            
-            # ایجاد رکورد تاریخچه
-            ItemHistory.objects.create(
-                item=item,
-                from_person=user,
-                to_person=user,
-                action_type='other',
-                description=f'تغییرات تایید شده توسط {user.name} {user.family}'
-            )
-        
-        # بروزرسانی وضعیت درخواست
+        # ابتدا درخواست را تایید می‌کنیم
         change_request.status = 'approved'
         change_request.responded_at = timezone.now()
         change_request.save()
         
-        action_message = {
-            'transfer': 'انتقال',
-            'remove': 'حذف',
-            'assign': 'تخصیص',
-            'edit': 'تغییر'
-        }.get(change_request.action_type, 'تغییر')
+        if change_request.action_type in ['transfer', 'receive']:
+            # برای انتقال کالا، بررسی می‌کنیم که آیا هر دو طرف تایید کرده‌اند
+            old_owner_id = changes['PersonalInfo'].get('old_id')
+            new_owner_id = changes['PersonalInfo'].get('new_id')
+            
+            if old_owner_id and new_owner_id:
+                # بررسی اینکه آیا هر دو طرف تایید کرده‌اند
+                both_approved = check_both_parties_approved(item, old_owner_id, new_owner_id)
+                
+                if both_approved:
+                    # استفاده از shared utility برای انتقا��
+                    success, message = approve_item_transfer(item, old_owner_id, new_owner_id)
+                    if success:
+                        messages.success(request, f"درخواست شما تایید شد. {message}")
+                    else:
+                        messages.error(request, message)
+                else:
+                    # فقط یکی از طرفین تایید کرده
+                    message = get_approval_message(change_request, old_owner_id, new_owner_id)
+                    messages.success(request, message)
+            else:
+                # اگر مالک قبلی وجود ندارد، این یک خطای منطقی است
+                # چون transfer/receive باید همیشه بین دو نفر باشد
+                messages.error(request, "خطا: درخواست انتقال نامعتبر - اطلاعات مالک قبلی یافت نشد.")
         
-        messages.success(request, f"درخواست {action_message} کالا {item.Technical_items} تایید شد.")
+        elif change_request.action_type == 'remove':
+            # حذف کالا ا�� مالک
+            success, message = approve_item_removal(item, item.PersonalInfo)
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
+        
+        elif change_request.action_type == 'assign':
+            # تخصیص کالا به مالک جدید - فقط اگر کالا مالک قبلی نداشته باشد
+            if not item.PersonalInfo:
+                success, message = approve_item_assignment(item, change_request.owner)
+                if success:
+                    messages.success(request, message)
+                else:
+                    messages.error(request, message)
+            else:
+                # اگر کالا مالک دارد، این باید از طریق transfer/receive با��د
+                messages.error(request, "خطا: کالا دارای مالک است. انتقال باید از طریق سیستم تایید دوطرفه انجام شود.")
+        
+        elif change_request.action_type == 'edit':
+            # ویرایش کالا
+            success, message = approve_item_edit(item, changes, change_request.owner)
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
+        
         return redirect('dashboard')
         
     except PersonalInfo.DoesNotExist:
@@ -345,19 +299,22 @@ def approve_change_request(request, request_id):
 
 @require_POST
 def reject_change_request(request, request_id):
-    """رد درخواست تغییر کالا"""
-    if 'user_id' not in request.session:
+    """رد درخواست تغییر کالا - استفاده از shared utilities"""
+    if not HolderSessionManager.is_authenticated(request):
         return JsonResponse({'status': 'error', 'message': 'لطفا ابتدا وارد شوید'})
     
-    user_id = request.session['user_id']
+    user_id = HolderSessionManager.get_user_id(request)
     try:
         user = PersonalInfo.objects.get(Personnel_number=user_id)
         change_request = get_object_or_404(ItemChangeRequest, id=request_id, owner=user, status='pending')
         
-        # بروزرسانی وضعیت در��واست
+        # بروزرسانی وضعیت درخواست
         change_request.status = 'rejected'
         change_request.responded_at = timezone.now()
         change_request.save()
+        
+        # استفاده از shared utility برای رد درخواست‌های مرتبط
+        reject_related_requests(change_request)
         
         messages.info(request, f"درخواست تغییر کالا {change_request.item.Technical_items} رد شد.")
         return redirect('dashboard')

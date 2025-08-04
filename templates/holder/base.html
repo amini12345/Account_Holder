@@ -57,9 +57,9 @@
     <div class="container">
         <header class="site-header">
             <h1>سیستم مدیریت دارندگان حساب</h1>
-            {% if request.session.user_id %}
+            {% if request.session.holder_user_id %}
                 <div class="text-left">
-                    <span>خوش آمدید، {{ request.session.user_name }}</span>
+                    <span>خوش آمدید، {{ request.session.holder_user_name }}</span>
                     <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm mr-2">خروج</a>
                 </div>
             {% endif %}

@@ -7,6 +7,7 @@ from django import forms
 from django.utils.html import format_html
 from django.urls import reverse
 import json
+from shared.approval_utils import approve_item_assignment
 
 #Admin header change
 admin.site.site_header = "پنل مدیریت وب سایت"
@@ -81,7 +82,9 @@ class ItemInfoAdmin(admin.ModelAdmin):
                     if field == 'PersonalInfo':
                         changes[field] = {
                             'old': f"{original_value.name} {original_value.family}" if original_value else None,
-                            'new': f"{new_value.name} {new_value.family}" if new_value else None
+                            'new': f"{new_value.name} {new_value.family}" if new_value else None,
+                            'old_id': original_value.Personnel_number if original_value else None,
+                            'new_id': new_value.Personnel_number if new_value else None
                         }
                     else:
                         changes[field] = {
@@ -90,21 +93,92 @@ class ItemInfoAdmin(admin.ModelAdmin):
                         }
             
             if changes:  # اگر تغییری وجود دارد
-                # ایجاد درخواست تایید
-                ItemChangeRequest.objects.create(
-                    item=original_obj,
-                    owner=original_obj.PersonalInfo,
-                    admin_user=request.user.username,
-                    action_type='edit',
-                    proposed_changes=changes,
-                    description=f"درخواست تغییر کالا {original_obj.Technical_items} توسط مدیر {request.user.username}"
-                )
+                # بررسی اینکه آیا تغییر مالک رخ داده است
+                owner_change = 'PersonalInfo' in changes
                 
-                messages.warning(request, 
-                    f"درخواست تغییر کالا {original_obj.Technical_items} برای تایید مالک ارسال شد. "
-                    f"تغییرات پس از تایید مالک اعمال خواهد شد."
-                )
-                return  # جلوگیری از ذخیره تغییرات
+                if owner_change:
+                    old_owner = original_obj.PersonalInfo
+                    new_owner = obj.PersonalInfo
+                    
+                    # اگر کالا از کسی گرفته می‌شود (کم می‌شود)
+                    if old_owner and old_owner != new_owner:
+                        # ایجاد درخواست تایید برای مالک قبلی (مرحله اول)
+                        action_type = 'transfer' if new_owner else 'remove'
+                        description = f"درخواست {'انتقال' if new_owner else 'حذف'} کالا {original_obj.Technical_items} توسط مدیر {request.user.username}"
+                        if new_owner:
+                            description += f" به {new_owner.name} {new_owner.family}"
+                        
+                        # ایجاد درخواست برای مالک فعلی
+                        ItemChangeRequest.objects.create(
+                            item=original_obj,
+                            owner=old_owner,
+                            admin_user=request.user.username,
+                            action_type=action_type,
+                            proposed_changes=changes,
+                            description=description
+                        )
+                        
+                        if new_owner:
+                            # همزمان ایجاد درخواست برای مالک جدید
+                            ItemChangeRequest.objects.create(
+                                item=original_obj,
+                                owner=new_owner,
+                                admin_user=request.user.username,
+                                action_type='receive',
+                                proposed_changes=changes,
+                                description=f"درخواست دریافت کالا {original_obj.Technical_items} توسط مدیر {request.user.username}"
+                            )
+                            
+                            messages.warning(request, 
+                                f"درخواست انتقال کالا {original_obj.Technical_items} "
+                                f"برای تایید {old_owner.name} {old_owner.family} (مالک فعلی) و "
+                                f"{new_owner.name} {new_owner.family} (مالک جدید) ارسال شد. "
+                                f"کالا پس از تایید هر دو نفر منتقل خواهد شد."
+                            )
+                        else:
+                            messages.warning(request, 
+                                f"درخواست حذف کالا {original_obj.Technical_items} "
+                                f"برای تایید {old_owner.name} {old_owner.family} ارسال شد. "
+                                f"تغییرات پس از تایید مالک اعمال خواهد شد."
+                            )
+                        return  # جلوگیری از ذخیره تغییرات
+                    
+                    # اگر کالا به کسی داده می‌شود (اضافه می‌شود) و مالک قبلی ندارد
+                    elif new_owner and not old_owner:
+                        # ایجاد درخواست تایید برای مالک جدید
+                        ItemChangeRequest.objects.create(
+                            item=original_obj,
+                            owner=new_owner,
+                            admin_user=request.user.username,
+                            action_type='assign',
+                            proposed_changes=changes,
+                            description=f"درخواست تخصیص کالا {original_obj.Technical_items} توسط مدیر {request.user.username}"
+                        )
+                        
+                        messages.warning(request, 
+                            f"درخواست تخصیص کالا {original_obj.Technical_items} "
+                            f"برای تایید {new_owner.name} {new_owner.family} ارسال شد. "
+                            f"تغییرات پس از تایید مالک اعمال خواهد شد."
+                        )
+                        return  # جلوگیری از ذخیره تغییرات
+                
+                # اگر تغییرات غیر از مالک است و کالا مالک دارد
+                else:
+                    # ایجاد درخواست تایید برای تغییرات عادی
+                    ItemChangeRequest.objects.create(
+                        item=original_obj,
+                        owner=original_obj.PersonalInfo,
+                        admin_user=request.user.username,
+                        action_type='edit',
+                        proposed_changes=changes,
+                        description=f"درخواست تغییر مشخصات کالا {original_obj.Technical_items} توسط مدیر {request.user.username}"
+                    )
+                    
+                    messages.warning(request, 
+                        f"درخواست تغییر کالا {original_obj.Technical_items} برای تایید مالک ارسال شد. "
+                        f"تغییرات پس از تایید مالک اعمال خواهد شد."
+                    )
+                    return  # جلوگیری از ذخیره تغییرات
         
         # اگر کالا مالک ندارد یا کالا جدید است، مستقیماً ذخیره شود
         super().save_model(request, obj, form, change)
@@ -121,7 +195,7 @@ class ItemInfoAdmin(admin.ModelAdmin):
                 
                 for item in queryset:
                     if item.PersonalInfo and item.PersonalInfo != to_person:
-                        # ایجاد درخواست تایید برای انتقال
+                        # ایجاد درخواست تایید برای مالک قبلی
                         ItemChangeRequest.objects.create(
                             item=item,
                             owner=item.PersonalInfo,
@@ -130,29 +204,44 @@ class ItemInfoAdmin(admin.ModelAdmin):
                             proposed_changes={
                                 'PersonalInfo': {
                                     'old': f"{item.PersonalInfo.name} {item.PersonalInfo.family}",
-                                    'new': f"{to_person.name} {to_person.family}"
+                                    'new': f"{to_person.name} {to_person.family}",
+                                    'old_id': item.PersonalInfo.Personnel_number,
+                                    'new_id': to_person.Personnel_number
                                 }
                             },
                             description=description or f'درخواست انتقال کالا از {item.PersonalInfo.name} {item.PersonalInfo.family} به {to_person.name} {to_person.family}'
                         )
+                        
+                        # همزمان ایجاد درخواست تایید برای مالک جدید
+                        ItemChangeRequest.objects.create(
+                            item=item,
+                            owner=to_person,
+                            admin_user=request.user.username,
+                            action_type='receive',
+                            proposed_changes={
+                                'PersonalInfo': {
+                                    'old': f"{item.PersonalInfo.name} {item.PersonalInfo.family}",
+                                    'new': f"{to_person.name} {to_person.family}",
+                                    'old_id': item.PersonalInfo.Personnel_number,
+                                    'new_id': to_person.Personnel_number
+                                }
+                            },
+                            description=description or f'درخواست دریافت کالا از {item.PersonalInfo.name} {item.PersonalInfo.family}'
+                        )
                         request_count += 1
                     elif not item.PersonalInfo:
-                        # اگر کالا مالک ندارد، مستقیماً انتقال دهید
-                        ItemHistory.objects.create(
-                            item=item,
-                            from_person=None,
-                            to_person=to_person,
-                            action_type='assign',
-                            description=description or f'کالا به {to_person.name} {to_person.family} تخصیص داده شد.'
+                        # اگر کالا مالک ندارد، از shared utility استفاده کن
+                        success, message = approve_item_assignment(
+                            item, to_person,
+                            description or f'کالا به {to_person.name} {to_person.family} تخصیص داده شد.'
                         )
-                        item.PersonalInfo = to_person
-                        item.update_date = timezone.now()
-                        item.save()
-                        count += 1
+                        if success:
+                            count += 1
                 
                 if request_count > 0:
                     self.message_user(request, 
-                        f'{request_count} درخواست انتقال برای تایید مالکان ارسال شد.', 
+                        f'{request_count} درخواست انتقال برای تایید مالکان فعلی و جدید ارسال شد. '
+                        f'کالاها پس از تایید هر دو نفر منتقل خواهند شد.', 
                         messages.WARNING
                     )
                 if count > 0:
@@ -243,7 +332,7 @@ class ItemChangeRequestAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
     
     def show_changes(self, obj):
-        """نمایش خلاصه تغییرات"""
+        """نمای�� خلاصه تغییرات"""
         changes = obj.proposed_changes
         if isinstance(changes, dict):
             summary = []

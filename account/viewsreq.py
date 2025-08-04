@@ -13,6 +13,10 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from holder.models import Items, ItemHistory, PersonalInfo, ItemChangeRequest
 from .forms import ItemForm
+from shared.approval_utils import (
+    check_both_parties_approved, approve_item_transfer, approve_item_assignment,
+    approve_item_removal, approve_item_edit, reject_related_requests, get_approval_message
+)
 
 
 # ==================== ITEM CHANGE REQUEST VIEWS ====================
@@ -69,6 +73,7 @@ class ItemUpdateViewWithApproval(LoginRequiredMixin, UpdateView):
                     if new_owner:
                         description += f" به {new_owner.name} {new_owner.family}"
                     
+                    # ایجاد درخواست برای مالک فعلی
                     ItemChangeRequest.objects.create(
                         item=original_obj,
                         owner=old_owner,
@@ -79,10 +84,21 @@ class ItemUpdateViewWithApproval(LoginRequiredMixin, UpdateView):
                     )
                     
                     if new_owner:
+                        # همزمان ایجاد درخواست برای مالک جدید
+                        ItemChangeRequest.objects.create(
+                            item=original_obj,
+                            owner=new_owner,
+                            admin_user=self.request.user.username,
+                            action_type='receive',
+                            proposed_changes=changes,
+                            description=f"درخواست دریافت کالا {original_obj.Technical_items} توسط مدیر {self.request.user.username}"
+                        )
+                        
                         messages.warning(self.request, 
                             f"درخواست انتقال کالا {original_obj.Technical_items} "
-                            f"برای تایید {old_owner.name} {old_owner.family} (مالک فعلی) ارسال شد. "
-                            f"پس از تایید مالک فعلی، درخواست برای {new_owner.name} {new_owner.family} (مالک جدید) ارسال خواهد شد."
+                            f"برای تایید {old_owner.name} {old_owner.family} (مالک فعلی) و "
+                            f"{new_owner.name} {new_owner.family} (مالک جدید) ارسال شد. "
+                            f"کالا پس از تایید هر دو نفر منتقل خواهد شد."
                         )
                     else:
                         messages.warning(self.request, 
@@ -189,10 +205,38 @@ def change_requests_list(request):
 @login_required
 def change_request_detail(request, pk):
     """جزئیات درخواست تغییر"""
+    from django.contrib.auth.models import User
+    from extensions.utils import jalali_converter
+    
     change_request = get_object_or_404(ItemChangeRequest, pk=pk)
+    
+    # ��ریافت اطلاعات مدیر از User model
+    admin_user_obj = None
+    try:
+        admin_user_obj = User.objects.get(username=change_request.admin_user)
+    except User.DoesNotExist:
+        admin_user_obj = None
+    
+    # دریافت اطلاعات دریافت کننده از proposed_changes
+    new_owner_info = None
+    if change_request.proposed_changes and 'PersonalInfo' in change_request.proposed_changes:
+        new_owner_id = change_request.proposed_changes['PersonalInfo'].get('new_id')
+        if new_owner_id:
+            try:
+                new_owner_info = PersonalInfo.objects.get(Personnel_number=new_owner_id)
+            except PersonalInfo.DoesNotExist:
+                new_owner_info = None
+    
+    # تبدیل تاریخ پاسخ به فارسی
+    responded_at_persian = None
+    if change_request.responded_at:
+        responded_at_persian = jalali_converter(change_request.responded_at)
     
     context = {
         'change_request': change_request,
+        'admin_user_obj': admin_user_obj,
+        'new_owner_info': new_owner_info,
+        'responded_at_persian': responded_at_persian,
     }
     
     return render(request, 'registration/change_request_detail.html', context)
@@ -201,7 +245,7 @@ def change_request_detail(request, pk):
 @require_POST
 @login_required
 def approve_change_request_user(request, request_id):
-    """تایید درخواست تغییر کالا توسط کاربر (مالک)"""
+    """تایید درخواست تغییر کالا توسط کاربر (مالک) - استفاده از shared utilities"""
     change_request = get_object_or_404(ItemChangeRequest, id=request_id)
     
     # بررسی اینکه کاربر مالک کالا است
@@ -210,140 +254,66 @@ def approve_change_request_user(request, request_id):
         return redirect('account:change_requests_list')
     
     try:
-        # بروزرسانی وضعیت درخواست
+        item = change_request.item
+        changes = change_request.proposed_changes
+        
+        # ابتدا درخواست را تایید می‌کنیم
         change_request.status = 'approved'
         change_request.responded_at = timezone.now()
         change_request.save()
         
-        item = change_request.item
-        changes = change_request.proposed_changes
-        
-        if change_request.action_type == 'transfer':
-            # مالک اول تایید کرد، کالا را از او حذف کرده و درخواست برای مالک دوم ایجاد می‌شود
+        if change_request.action_type in ['transfer', 'receive']:
+            # برای انتقال کالا، بررسی می‌کنیم که آیا هر دو طرف تایید کرده‌اند
+            old_owner_id = changes['PersonalInfo'].get('old_id')
             new_owner_id = changes['PersonalInfo'].get('new_id')
-            if new_owner_id:
-                try:
-                    new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
-                    
-                    # ابتدا کالا را از مالک فعلی حذف می‌کنیم (بدون دارنده می‌شود)
-                    ItemHistory.objects.create(
-                        item=item,
-                        from_person=change_request.owner,
-                        to_person=None,
-                        action_type='return',
-                        description=f'حذف کالا از {change_request.owner.name} {change_request.owner.family} پس از تایید انتقال'
-                    )
-                    
-                    item.PersonalInfo = None
-                    item.update_date = timezone.now()
-                    item.save()
-                    
-                    # بررسی اینکه آیا درخواست برای مالک جدید قبلاً ایجاد شده است
-                    existing_receive_request = ItemChangeRequest.objects.filter(
-                        item=item,
-                        owner=new_owner,
-                        action_type='receive',
-                        status='pending'
-                    ).first()
-                    
-                    if not existing_receive_request:
-                        # ایجاد درخواست برای مالک جدید
-                        ItemChangeRequest.objects.create(
-                            item=item,
-                            owner=new_owner,
-                            admin_user=change_request.admin_user,
-                            action_type='receive',
-                            proposed_changes=changes,
-                            description=f"درخواست دریافت کالا {item.Technical_items} توسط مدیر {change_request.admin_user}"
-                        )
-                        messages.success(request, f"درخواست شما تایید شد. کالا از شما حذف شد و درخواست دریافت کالا برای {new_owner.name} {new_owner.family} ارسال شد.")
+            
+            if old_owner_id and new_owner_id:
+                # بررسی اینکه آیا هر دو طرف تایید کرده‌اند
+                both_approved = check_both_parties_approved(item, old_owner_id, new_owner_id)
+                
+                if both_approved:
+                    # استفاده از shared utility برای انتقال
+                    success, message = approve_item_transfer(item, old_owner_id, new_owner_id)
+                    if success:
+                        messages.success(request, f"درخواست شما تایید شد. {message}")
                     else:
-                        messages.success(request, f"درخواست شما تایید شد. کالا از شما حذف شد. منتظر تایید مالک جدید ({new_owner.name} {new_owner.family}) هستیم.")
-                            
-                except PersonalInfo.DoesNotExist:
-                    messages.error(request, "مالک جدید ی��فت نشد.")
-        
-        elif change_request.action_type == 'receive':
-            # مالک دوم تایید کرد، کالا را به او اختصاص می‌دهیم
-            # (کالا قبلاً بدون دارنده شده است)
-            ItemHistory.objects.create(
-                item=item,
-                from_person=None,
-                to_person=change_request.owner,
-                action_type='assign',
-                description=f'تخصیص کالا به {change_request.owner.name} {change_request.owner.family} پس از تایید دریافت'
-            )
-            
-            item.PersonalInfo = change_request.owner
-            item.update_date = timezone.now()
-            item.save()
-            
-            messages.success(request, f"کالا {item.Technical_items} با موفقیت به شما تخصیص داده شد.")
+                        messages.error(request, message)
+                else:
+                    # فقط یکی از طرفین تایید کرده
+                    message = get_approval_message(change_request, old_owner_id, new_owner_id)
+                    messages.success(request, message)
+            else:
+                # اگر مالک قبلی وجود ندارد، این یک خطای منطقی است
+                # چون transfer/receive باید همیشه بین دو نفر باشد
+                messages.error(request, "خطا: درخواست انتقال نامعتبر - اطلاعات مالک قبلی یافت نشد.")
         
         elif change_request.action_type == 'remove':
-            # حذف کالا از مالک
-            ItemHistory.objects.create(
-                item=item,
-                from_person=item.PersonalInfo,
-                to_person=None,
-                action_type='return',
-                description=f'حذف کالا از {item.PersonalInfo.name} {item.PersonalInfo.family} پس از تایید مالک'
-            )
-            
-            item.PersonalInfo = None
-            item.update_date = timezone.now()
-            item.save()
-            
-            messages.success(request, f"کالا {item.Technical_items} با موفقیت از شما حذف شد.")
+            # حذف ��الا از مالک
+            success, message = approve_item_removal(item, item.PersonalInfo)
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
         
         elif change_request.action_type == 'assign':
-            # تخصیص کالا به مالک جدید
-            ItemHistory.objects.create(
-                item=item,
-                from_person=None,
-                to_person=change_request.owner,
-                action_type='assign',
-                description=f'تخصیص کالا به {change_request.owner.name} {change_request.owner.family} پس از تایید مالک'
-            )
-            
-            item.PersonalInfo = change_request.owner
-            item.update_date = timezone.now()
-            item.save()
-            
-            messages.success(request, f"کالا {item.Technical_items} با موفقیت به شما تخصیص داده شد.")
+            # تخصیص کالا به مالک جدید - فقط اگر کالا مالک قبلی نداشته باشد
+            if not item.PersonalInfo:
+                success, message = approve_item_assignment(item, change_request.owner)
+                if success:
+                    messages.success(request, message)
+                else:
+                    messages.error(request, message)
+            else:
+                # اگر کالا مالک دارد، این باید از طریق transfer/receive باشد
+                messages.error(request, "خطا: کالا دارای مالک است. انتقال باید از طریق سیستم تایید دوطرفه انجام شود.")
         
         elif change_request.action_type == 'edit':
             # ویرایش کالا
-            for field, change in changes.items():
-                if field == 'PersonalInfo':
-                    # تغییر مالک
-                    new_owner_id = change.get('new_id')
-                    if new_owner_id:
-                        try:
-                            new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
-                            setattr(item, field, new_owner)
-                        except PersonalInfo.DoesNotExist:
-                            pass
-                    else:
-                        # حذف مالک
-                        setattr(item, field, None)
-                else:
-                    # سایر فیلدها
-                    setattr(item, field, change['new'])
-            
-            item.update_date = timezone.now()
-            item.save()
-            
-            # ایجاد رکورد تاریخچه
-            ItemHistory.objects.create(
-                item=item,
-                from_person=change_request.owner,
-                to_person=change_request.owner,
-                action_type='other',
-                description=f'تغییرات کالا پس از تایید مالک'
-            )
-            
-            messages.success(request, f"تغییرات کالا {item.Technical_items} با موفقیت اعمال شد.")
+            success, message = approve_item_edit(item, changes, change_request.owner)
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
         
         return redirect('account:change_requests_list')
         
@@ -355,7 +325,7 @@ def approve_change_request_user(request, request_id):
 @require_POST
 @login_required
 def reject_change_request_user(request, request_id):
-    """رد درخواست تغییر کالا توسط کاربر (مالک)"""
+    """رد درخواست تغییر کالا توسط کاربر (مالک) - استفاده از shared utilities"""
     change_request = get_object_or_404(ItemChangeRequest, id=request_id)
     
     # بررسی اینکه کاربر مالک کالا است
@@ -369,40 +339,8 @@ def reject_change_request_user(request, request_id):
         change_request.responded_at = timezone.now()
         change_request.save()
         
-        # اگر این درخواست انتقال بود، درخواست مرتبط با مالک دیگر را نیز رد کنید
-        if change_request.action_type in ['transfer', 'receive']:
-            item = change_request.item
-            changes = change_request.proposed_changes
-            
-            if change_request.action_type == 'transfer':
-                # ��د درخواست دریافت مالک جدید
-                new_owner_id = changes['PersonalInfo'].get('new_id')
-                if new_owner_id:
-                    related_request = ItemChangeRequest.objects.filter(
-                        item=item,
-                        owner__Personnel_number=new_owner_id,
-                        action_type='receive',
-                        status='pending'
-                    ).first()
-                    if related_request:
-                        related_request.status = 'rejected'
-                        related_request.responded_at = timezone.now()
-                        related_request.save()
-            
-            elif change_request.action_type == 'receive':
-                # رد درخواست انتقال مالک قبلی
-                old_owner_id = changes['PersonalInfo'].get('old_id')
-                if old_owner_id:
-                    related_request = ItemChangeRequest.objects.filter(
-                        item=item,
-                        owner__Personnel_number=old_owner_id,
-                        action_type='transfer',
-                        status='pending'
-                    ).first()
-                    if related_request:
-                        related_request.status = 'rejected'
-                        related_request.responded_at = timezone.now()
-                        related_request.save()
+        # استفاده از shared utility برای رد درخواست‌های مرتبط
+        reject_related_requests(change_request)
         
         messages.info(request, f"درخواست تغییر کالا {change_request.item.Technical_items} رد شد.")
         return redirect('account:change_requests_list')
@@ -427,113 +365,55 @@ def approve_change_request_admin(request, request_id):
             # انتقال یا حذف کالا
             if 'PersonalInfo' in changes:
                 new_owner_id = changes['PersonalInfo'].get('new_id')
-                new_owner = None
                 
                 if new_owner_id and change_request.action_type == 'transfer':
-                    # پیدا کردن مالک جدید برای انتقال
-                    try:
-                        new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
-                    except PersonalInfo.DoesNotExist:
-                        # اگر مالک جدید یافت نشد، از نام استفاده کن
-                        new_owner_name = changes['PersonalInfo']['new']
-                        if new_owner_name:
-                            name_parts = new_owner_name.split(' ')
-                            if len(name_parts) >= 2:
-                                new_owner = PersonalInfo.objects.filter(
-                                    name=name_parts[0], 
-                                    family=' '.join(name_parts[1:])
-                                ).first()
+                    # انتقال کالا
+                    old_owner_id = item.PersonalInfo.Personnel_number if item.PersonalInfo else None
+                    if old_owner_id:
+                        success, message = approve_item_transfer(
+                            item, old_owner_id, new_owner_id,
+                            f'انتقال اجباری توسط مدیر {request.user.username}'
+                        )
+                    else:
+                        # تخصیص به مالک جدید
+                        try:
+                            new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
+                            success, message = approve_item_assignment(
+                                item, new_owner,
+                                f'تخصیص اجباری توس�� مدیر {request.user.username}'
+                            )
+                        except PersonalInfo.DoesNotExist:
+                            success, message = False, "مالک جدید یافت نشد"
+                else:
+                    # حذف کالا
+                    success, message = approve_item_removal(
+                        item, item.PersonalInfo,
+                        f'حذف اجباری توسط مدیر {request.user.username}'
+                    )
                 
-                # ایجاد رکورد تاریخچه
-                action_type = 'transfer' if new_owner else 'return'
-                description = f'{"انتقال" if new_owner else "حذف"} اجباری توسط مدیر {request.user.username}'
-                
-                ItemHistory.objects.create(
-                    item=item,
-                    from_person=item.PersonalInfo,
-                    to_person=new_owner,
-                    action_type=action_type,
-                    description=description
-                )
-                
-                # بروزرسانی مالک
-                item.PersonalInfo = new_owner
-                item.update_date = timezone.now()
-                item.save()
+                if not success:
+                    messages.error(request, message)
+                    return redirect('account:change_requests_list')
                 
         elif change_request.action_type == 'assign':
             # تخصیص کالا به مالک جدید
-            if 'PersonalInfo' in changes:
-                new_owner_id = changes['PersonalInfo'].get('new_id')
-                if new_owner_id:
-                    try:
-                        new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
-                    except PersonalInfo.DoesNotExist:
-                        # اگر مالک جدید یافت نشد، از نام استفاده کن
-                        new_owner_name = changes['PersonalInfo']['new']
-                        if new_owner_name:
-                            name_parts = new_owner_name.split(' ')
-                            if len(name_parts) >= 2:
-                                new_owner = PersonalInfo.objects.filter(
-                                    name=name_parts[0], 
-                                    family=' '.join(name_parts[1:])
-                                ).first()
-                    
-                    if new_owner:
-                        # ایجاد رکورد تاریخچه
-                        ItemHistory.objects.create(
-                            item=item,
-                            from_person=None,
-                            to_person=new_owner,
-                            action_type='assign',
-                            description=f'تخصیص اجباری توسط مدیر {request.user.username}'
-                        )
-                        
-                        # بروزرسانی مالک
-                        item.PersonalInfo = new_owner
-                        item.update_date = timezone.now()
-                        item.save()
+            success, message = approve_item_assignment(
+                item, change_request.owner,
+                f'تخصیص اجباری توسط مدیر {request.user.username}'
+            )
+            if not success:
+                messages.error(request, message)
+                return redirect('account:change_requests_list')
                         
         elif change_request.action_type == 'edit':
-            # ویرایش کالا
-            for field, change in changes.items():
-                if field == 'PersonalInfo':
-                    # تغییر مالک
-                    new_owner_id = change.get('new_id')
-                    if new_owner_id:
-                        try:
-                            new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
-                            setattr(item, field, new_owner)
-                        except PersonalInfo.DoesNotExist:
-                            # اگر مالک جدید یافت نشد، از نام استفاده کن
-                            new_owner_name = change['new']
-                            if new_owner_name:
-                                name_parts = new_owner_name.split(' ')
-                                if len(name_parts) >= 2:
-                                    new_owner = PersonalInfo.objects.filter(
-                                        name=name_parts[0], 
-                                        family=' '.join(name_parts[1:])
-                                    ).first()
-                                    if new_owner:
-                                        setattr(item, field, new_owner)
-                    else:
-                        # حذف مالک
-                        setattr(item, field, None)
-                else:
-                    # سایر فیلدها
-                    setattr(item, field, change['new'])
-            
-            item.update_date = timezone.now()
-            item.save()
-            
-            # ایجاد رکورد تاریخچه
-            ItemHistory.objects.create(
-                item=item,
-                from_person=change_request.owner,
-                to_person=change_request.owner,
-                action_type='other',
-                description=f'تغییرات اجباری توسط مدیر {request.user.username}'
+            # و��رایش کالا
+            success, message = approve_item_edit(
+                item, changes, change_request.owner,
+                f'تغییرات اجباری توسط مدیر {request.user.username}'
             )
+            if not success:
+                messages.error(request, message)
+                return redirect('account:change_requests_list')
         
         # بروزرسانی وضعیت درخواست
         change_request.status = 'approved'
@@ -575,6 +455,24 @@ def reject_change_request_admin(request, request_id):
         return redirect('account:change_requests_list')
 
 
+@require_POST
+@login_required
+def delete_change_request(request, request_id):
+    """حذف درخواست تغییر کالا"""
+    change_request = get_object_or_404(ItemChangeRequest, id=request_id)
+    
+    try:
+        item_name = change_request.item.Technical_items
+        change_request.delete()
+        
+        messages.success(request, f"درخواست تغییر کالا {item_name} با موفقیت حذف شد.")
+        return redirect('account:change_requests_list')
+        
+    except Exception as e:
+        messages.error(request, f"خطا در حذف درخ��است: {str(e)}")
+        return redirect('account:change_requests_list')
+
+
 @login_required
 def bulk_transfer_items(request):
     """انتقال دسته‌ای کالاها با سیستم تایید"""
@@ -602,7 +500,7 @@ def bulk_transfer_items(request):
                     item = Items.objects.get(id=item_id)
                     
                     if item.PersonalInfo and item.PersonalInfo != to_person:
-                        # ایجاد درخواست تایید برای مالک قبلی (فقط مرحله اول)
+                        # ایجاد درخواست تایید برای مالک قبلی و همزمان برای مالک جدید
                         ItemChangeRequest.objects.create(
                             item=item,
                             owner=item.PersonalInfo,
@@ -618,28 +516,41 @@ def bulk_transfer_items(request):
                             },
                             description=description or f'درخواست انتقال کالا از {item.PersonalInfo.name} {item.PersonalInfo.family} به {to_person.name} {to_person.family}'
                         )
+                        
+                        # همزمان ایجاد درخواست برای مالک جدید
+                        ItemChangeRequest.objects.create(
+                            item=item,
+                            owner=to_person,
+                            admin_user=request.user.username,
+                            action_type='receive',
+                            proposed_changes={
+                                'PersonalInfo': {
+                                    'old': f"{item.PersonalInfo.name} {item.PersonalInfo.family}",
+                                    'new': f"{to_person.name} {to_person.family}",
+                                    'old_id': item.PersonalInfo.Personnel_number,
+                                    'new_id': to_person.Personnel_number
+                                }
+                            },
+                            description=description or f'درخواست دریافت کالا از {item.PersonalInfo.name} {item.PersonalInfo.family}'
+                        )
+                        
                         request_count += 1
                     elif not item.PersonalInfo:
                         # اگر کالا مالک ندارد، مستقیماً انتقال دهید
-                        ItemHistory.objects.create(
-                            item=item,
-                            from_person=None,
-                            to_person=to_person,
-                            action_type='assign',
-                            description=description or f'کالا به {to_person.name} {to_person.family} تخصیص داده شد.'
+                        success, message = approve_item_assignment(
+                            item, to_person,
+                            description or f'کالا به {to_person.name} {to_person.family} تخصیص داده شد.'
                         )
-                        item.PersonalInfo = to_person
-                        item.update_date = timezone.now()
-                        item.save()
-                        direct_count += 1
+                        if success:
+                            direct_count += 1
                         
                 except Items.DoesNotExist:
                     continue
             
             if request_count > 0:
                 messages.warning(request, 
-                    f'{request_count} درخواست انتقال برای تایید مالکان فعلی ارسال شد. '
-                    f'پس از تایید هر مالک، درخواست برای مالک جدید ارسال خواهد شد.'
+                    f'{request_count} درخواست انتقال برای تایید مالکان فعلی و جدید ارسال شد. '
+                    f'کالاها پس از تایید هر دو نفر منتقل خواهند شد.'
                 )
             if direct_count > 0:
                 messages.success(request, 

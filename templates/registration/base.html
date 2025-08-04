@@ -35,6 +35,9 @@
   <!-- Custom style for RTL -->
   <link rel="stylesheet" href="{% static 'registration/Adminlte/dist/css/custom.css' %}">
   
+  {% block extra_css %}
+  {% endblock %}
+  
   <style>
     /* Fix for LTR content in RTL layout */
     .ltr-content {

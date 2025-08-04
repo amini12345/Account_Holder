@@ -236,6 +236,13 @@
                     </button>
                   </form>
                   {% endif %}
+                  <form method="post" action="{% url 'account:delete_change_request' request.id %}" 
+                        class="d-inline" onsubmit="return confirm('آیا از حذف این درخواست اطمینان دارید؟ این عمل قابل بازگشت نیست.')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-warning" title="حذف درخواست">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
                 </div>
               </td>
             </tr>
