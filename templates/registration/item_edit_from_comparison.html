@@ -23,7 +23,7 @@
                 {% if excel_data %}
                 <!-- نمایش مقایسه داده‌ها -->
                 <div class="alert alert-info mb-4">
-                    <h5><i class="fas fa-info-circle"></i> مقای��ه داده‌های Excel با سیستم</h5>
+                    <h5><i class="fas fa-info-circle"></i> مقایسه داده‌های Excel با سیستم</h5>
                     <p class="mb-3">می‌توانید داده‌های Excel را به سیستم اعمال کنید یا به صورت دستی ویرایش کنید.</p>
                     
                     <div class="row">
@@ -57,7 +57,31 @@
                         </div>
                     </div>
                     
+                    <!-- اطلاعیه سیستم تایید -->
+                    {% if item.PersonalInfo %}
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-exclamation-triangle"></i> توجه: سیستم تایید فعال است</h6>
+                        <p class="mb-2">این کالا دارای مالک است: <strong>{{ item.PersonalInfo.name }} {{ item.PersonalInfo.family }}</strong></p>
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle"></i> 
+                            هرگونه تغییر در این کالا نیاز به تایید مالک دارد. پس از ثبت تغییرات، درخواست تایید برای مالک ارسال خواهد شد.
+                        </p>
+                    </div>
+                    {% endif %}
                     
+                    
+                </div>
+                {% endif %}
+
+                <!-- اطلاعیه سیستم تایید (برای کالاهای دارای مالک) -->
+                {% if item.PersonalInfo and not excel_data %}
+                <div class="alert alert-warning mb-4">
+                    <h6><i class="fas fa-exclamation-triangle"></i> توجه: سیستم تایید فعال است</h6>
+                    <p class="mb-2">این کالا دارای مالک است: <strong>{{ item.PersonalInfo.name }} {{ item.PersonalInfo.family }}</strong></p>
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle"></i> 
+                        هرگونه تغییر در این کالا نیاز به تایید مالک دارد. پس از ثبت تغییرات، درخواست تایید برای مالک ارسال خواهد شد.
+                    </p>
                 </div>
                 {% endif %}
 

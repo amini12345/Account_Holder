@@ -215,7 +215,7 @@ def approve_item_edit(item, changes, owner, description=None):
                             return False, "خطا در یافتن اطلاعات مالکان."
                     else:
                         # فقط یکی از طرفین تایید کرده، کالا منتقل نمی‌شود
-                        return True, "درخواست شما تایید شد. کالا منتظر تایید طرف ��قابل است."
+                        return True, "درخواست شما تایید شد. کالا منتظر تایید طرف مقابل است."
                 elif new_owner_id:
                     # تغییر عادی مالک (بدون نیاز به تایید دوطرفه)
                     try:

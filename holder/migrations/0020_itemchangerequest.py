@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name='ItemChangeRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('requester', models.CharField(max_length=100, verbose_name='درخواست کن��ده')),
+                ('requester', models.CharField(max_length=100, verbose_name='درخواست کننده')),
                 ('change_type', models.CharField(choices=[('edit', 'ویرایش کالا'), ('transfer', 'انتقال کالا'), ('delete', 'حذف کالا'), ('status_change', 'تغییر وضعیت')], max_length=20, verbose_name='نوع تغییر')),
                 ('description', models.TextField(verbose_name='توضیحات تغییر')),
                 ('old_data', models.JSONField(blank=True, null=True, verbose_name='داده\u200cهای قبلی')),

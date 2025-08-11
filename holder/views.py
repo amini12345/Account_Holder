@@ -30,22 +30,66 @@ def register(request):
 
 def login(request):
     if request.method == 'POST':
-        form = CustomLoginForm(request.POST)
-        if form.is_valid():
-            personnel_number = form.cleaned_data['Personnel_number']
-            password = form.cleaned_data['password']
+        # بررسی اینکه آیا درخواست مربوط به بازیابی رمز عبور است
+        if request.POST.get('action') == 'reset_password':
+            personnel_number = request.POST.get('personnel_number')
+            national_id = request.POST.get('national_id')
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+            
+            # اعتبارسنجی ورودی‌ها
+            if not all([personnel_number, national_id, new_password, confirm_password]):
+                messages.error(request, "لطفا تمام فیلدها را پر کنید")
+                return render(request, 'holder/login.html', {'form': CustomLoginForm()})
+            
+            if new_password != confirm_password:
+                messages.error(request, "رمزهای عبور مطابقت ندارند")
+                return render(request, 'holder/login.html', {'form': CustomLoginForm()})
+            
+            if len(new_password) < 8:
+                messages.error(request, "رمز عبور باید حداقل ۸ کاراکتر باشد")
+                return render(request, 'holder/login.html', {'form': CustomLoginForm()})
+            
+            if len(national_id) != 10 or not national_id.isdigit():
+                messages.error(request, "کد ملی باید ۱۰ رقم باشد")
+                return render(request, 'holder/login.html', {'form': CustomLoginForm()})
             
             try:
-                user = PersonalInfo.objects.get(Personnel_number=personnel_number)
-                if user.password == password: 
-                    # استفاده از Session Manager جدید
-                    HolderSessionManager.login_user(request, user)
-                    messages.success(request, f"خوش آمدید {user.name} {user.family}")
-                    return redirect('dashboard')
-                else:
-                    messages.error(request, "شماره پرسنلی یا رمز عبور اشتباه است")
+                # بررسی وجود کاربر با شماره پرسنلی و کد ملی
+                user = PersonalInfo.objects.get(
+                    Personnel_number=personnel_number,
+                    National_ID=national_id
+                )
+                
+                # تغییر رمز عبور
+                user.password = new_password
+                user.save()
+                
+                messages.success(request, "رمز عبور با موفقیت تغییر یافت. اکنون می‌توانید با رمز جدید وارد شوید.")
+                return render(request, 'holder/login.html', {'form': CustomLoginForm()})
+                
             except PersonalInfo.DoesNotExist:
-                messages.error(request, "شماره پرسنلی یا رمز عبور اشتباه است")
+                messages.error(request, "شماره پرسنلی یا کد ملی اشتباه است")
+                return render(request, 'holder/login.html', {'form': CustomLoginForm()})
+        
+        else:
+            # پردازش ورود معمولی
+            form = CustomLoginForm(request.POST)
+            if form.is_valid():
+                personnel_number = form.cleaned_data['Personnel_number']
+                password = form.cleaned_data['password']
+                
+                try:
+                    user = PersonalInfo.objects.get(Personnel_number=personnel_number)
+                    if user.password == password: 
+                        # استفاده از Session Manager جدید
+                        HolderSessionManager.login_user(request, user)
+                        messages.success(request, f"خوش آمدید {user.name} {user.family}")
+                        return redirect('dashboard')
+                    else:
+                        messages.error(request, "شماره پرسنلی یا رمز عبور اشتباه است")
+                except PersonalInfo.DoesNotExist:
+                    messages.error(request, "شماره پرسنلی یا رمز عبور اشتباه است")
     else:
         form = CustomLoginForm()
     

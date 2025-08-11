@@ -193,10 +193,10 @@ def compare_excel_with_items(request):
                     
                     elif field_type == 'status_main':
                         status_mapping = {
-                            'hardware': '(تعمیری)سخت افزار',
+                            'hardware': 'سخت افزار',
                             'Delivery': 'تحویل',
                             'warehouse': 'انبار',
-                            'سخت افزار (تعمیری)': '(تعمیری)سخت افزار',
+                            'سخت افزار ': 'سخت افزار',
                             'تحویل': 'تحویل',
                             'انبار': 'انبار'
                         }
@@ -411,7 +411,7 @@ def compare_excel_with_items(request):
             except Exception as e:
                 comparison_results['excel_errors'].append({
                     'row': row_num,
-                    'error': f'خطا در پردا��ش: {str(e)}',
+                    'error': f'خطا در پردازش: {str(e)}',
                     'data': {}
                 })
         

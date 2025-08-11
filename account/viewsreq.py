@@ -380,7 +380,7 @@ def approve_change_request_admin(request, request_id):
                             new_owner = PersonalInfo.objects.get(Personnel_number=new_owner_id)
                             success, message = approve_item_assignment(
                                 item, new_owner,
-                                f'تخصیص اجباری توس�� مدیر {request.user.username}'
+                                f'تخصیص اجباری توسط مدیر {request.user.username}'
                             )
                         except PersonalInfo.DoesNotExist:
                             success, message = False, "مالک جدید یافت نشد"
@@ -469,7 +469,7 @@ def delete_change_request(request, request_id):
         return redirect('account:change_requests_list')
         
     except Exception as e:
-        messages.error(request, f"خطا در حذف درخ��است: {str(e)}")
+        messages.error(request, f"خطا در حذف درخواست: {str(e)}")
         return redirect('account:change_requests_list')
 
 
@@ -536,13 +536,24 @@ def bulk_transfer_items(request):
                         
                         request_count += 1
                     elif not item.PersonalInfo:
-                        # اگر کالا مالک ندارد، مستقیماً انتقال دهید
-                        success, message = approve_item_assignment(
-                            item, to_person,
-                            description or f'کالا به {to_person.name} {to_person.family} تخصیص داده شد.'
+                        # اگر کالا مالک ندارد، درخواست تخصیص ایجاد کن
+                        ItemChangeRequest.objects.create(
+                            item=item,
+                            owner=to_person,
+                            admin_user=request.user.username,
+                            action_type='assign',
+                            proposed_changes={
+                                'PersonalInfo': {
+                                    'old': None,
+                                    'new': f"{to_person.name} {to_person.family}",
+                                    'old_id': None,
+                                    'new_id': to_person.Personnel_number
+                                }
+                            },
+                            description=description or f'درخواست تخصیص دسته‌ای کالا {item.Technical_items} به {to_person.name} {to_person.family}'
                         )
-                        if success:
-                            direct_count += 1
+                        
+                        direct_count += 1
                         
                 except Items.DoesNotExist:
                     continue
@@ -553,8 +564,9 @@ def bulk_transfer_items(request):
                     f'کالاها پس از تایید هر دو نفر منتقل خواهند شد.'
                 )
             if direct_count > 0:
-                messages.success(request, 
-                    f'{direct_count} کالا بدون مالک با موفقیت تخصیص داده شد.'
+                messages.warning(request, 
+                    f'{direct_count} درخواست تخصیص کالاهای بدون مالک برای تایید {to_person.name} {to_person.family} ارسال شد. '
+                    f'کالاها پس از تایید مالک جدید تخصیص خواهند یافت.'
                 )
                 
         except PersonalInfo.DoesNotExist:

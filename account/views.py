@@ -661,7 +661,7 @@ def export_excel(request):
     # ایجاد workbook و worksheet
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "لیست ��الاها"
+    ws.title = "لیست کالاها"
     
     # تنظیم RTL (راست به چپ) برای worksheet
     ws.sheet_view.rightToLeft = True
@@ -1020,7 +1020,7 @@ def confirm_import(request):
         del request.session['import_data']
     
     if success_count > 0:
-        messages.success(request, f'{success_count} مورد با موفقیت ��ردازش شد.')
+        messages.success(request, f'{success_count} مورد با موفقیت پردازش شد.')
     
     if error_count > 0:
         messages.warning(request, f'{error_count} مورد با خطا مواجه شد.')
@@ -1063,7 +1063,7 @@ def document_add(request):
             messages.success(request, 'مدرک با موفقیت اضافه شد.')
             return redirect('account:documents_list')
         else:
-            messages.error(request, 'لطفاً خطاه��ی فرم را بررسی کنید.')
+            messages.error(request, 'لطفاً خطاهای فرم را بررسی کنید.')
     else:
         form = DocumentForm()
     

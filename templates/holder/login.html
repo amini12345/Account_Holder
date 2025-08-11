@@ -26,8 +26,92 @@
             </form>
             <div class="text-center mt-3">
                 <p>حساب کاربری ندارید؟ <a href="{% url 'register' %}">ثبت‌نام کنید</a></p>
+                <p><a href="#" id="forgot-password-link">رمز عبور خود را فراموش کرده‌اید؟</a></p>
             </div>
+        </div>
+        
+        <!-- Password Reset Form -->
+        <div class="form-container mt-4" id="reset-password-form" style="display: none;">
+            <h3 class="mb-4">بازیابی رمز عبور</h3>
+            <form method="post" id="reset-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reset_password">
+                <div class="mb-3">
+                    <label for="reset_personnel_number" class="form-label">شماره پرسنلی</label>
+                    <input type="text" class="form-control" id="reset_personnel_number" name="personnel_number" required>
+                </div>
+                <div class="mb-3">
+                    <label for="national_id" class="form-label">کد ملی</label>
+                    <input type="text" class="form-control" id="national_id" name="national_id" required maxlength="10" pattern="[0-9]{10}">
+                    <div class="form-text">کد ملی باید ۱۰ رقم باشد</div>
+                </div>
+                <div class="mb-3">
+                    <label for="new_password" class="form-label">رمز عبور جدید</label>
+                    <input type="password" class="form-control" id="new_password" name="new_password" required minlength="8">
+                    <div class="form-text">رمز عبور باید حداقل ۸ کاراکتر باشد</div>
+                </div>
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">تکرار رمز عبور جدید</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="8">
+                </div>
+                <div class="mb-3 d-grid">
+                    <button type="submit" class="btn btn-warning">تغییر رمز عبور</button>
+                </div>
+                <div class="text-center">
+                    <a href="#" id="back-to-login">بازگشت به ورود</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const backToLoginLink = document.getElementById('back-to-login');
+    const loginForm = document.querySelector('.form-container:first-child');
+    const resetForm = document.getElementById('reset-password-form');
+    const confirmPassword = document.getElementById('confirm_password');
+    const newPassword = document.getElementById('new_password');
+
+    // Show reset password form
+    forgotPasswordLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        loginForm.style.display = 'none';
+        resetForm.style.display = 'block';
+    });
+
+    // Show login form
+    backToLoginLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        resetForm.style.display = 'none';
+        loginForm.style.display = 'block';
+    });
+
+    // Password confirmation validation
+    function validatePassword() {
+        if (newPassword.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('رمزهای عبور مطابقت ندارند');
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    }
+
+    newPassword.addEventListener('change', validatePassword);
+    confirmPassword.addEventListener('keyup', validatePassword);
+
+    // National ID validation
+    const nationalIdInput = document.getElementById('national_id');
+    nationalIdInput.addEventListener('input', function(e) {
+        // Only allow numbers
+        this.value = this.value.replace(/[^0-9]/g, '');
+        
+        // Limit to 10 digits
+        if (this.value.length > 10) {
+            this.value = this.value.slice(0, 10);
+        }
+    });
+});
+</script>
+
 {% endblock %} 

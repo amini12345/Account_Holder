@@ -36,6 +36,18 @@
             </div>
           {% endif %}
 
+          <!-- اطلاعیه سیستم تایید (برای کالا��ای دارای مالک) -->
+          {% if object and object.PersonalInfo %}
+          <div class="alert alert-warning mb-4">
+            <h6><i class="fas fa-exclamation-triangle"></i> توجه: سیستم تایید فعال است</h6>
+            <p class="mb-2">این کالا دارای مالک است: <strong>{{ object.PersonalInfo.name }} {{ object.PersonalInfo.family }}</strong></p>
+            <p class="mb-0">
+              <i class="fas fa-info-circle"></i> 
+              هرگونه تغییر در این کالا نیاز به تایید مالک دارد. پس از ثبت تغییرات، درخواست تایید برای مالک ارسال خواهد شد.
+            </p>
+          </div>
+          {% endif %}
+
           <div class="row">
             <div class="col-md-6">
               <div class="form-group">

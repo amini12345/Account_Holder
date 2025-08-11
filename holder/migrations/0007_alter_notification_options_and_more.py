@@ -12,11 +12,11 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(
             name='notification',
-            options={'ordering': ['-created_at'], 'verbose_name': 'اعلان', 'verbose_name_plural': 'اعلان\u200cه��'},
+            options={'ordering': ['-created_at'], 'verbose_name': 'اعلان', 'verbose_name_plural': 'اعلان\u200cه'},
         ),
         migrations.AlterField(
             model_name='results',
             name='Internal_meetings',
-            field=models.IntegerField(verbose_name='جل��ات داخلی'),
+            field=models.IntegerField(verbose_name='جلسات داخلی'),
         ),
     ]

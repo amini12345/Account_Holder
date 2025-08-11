@@ -75,7 +75,7 @@ def add_selected_items(request):
                     sub_status_mapping = {
                         'تعمیر': 'repair',
                         'ارتقا': 'upgrade',
-                        '��ارج': 'external',
+                        'ارجاع': 'external',
                         'داخل': 'internal',
                         'آماده بکار': 'ready',
                         'عودتی سالم': 'returned_good',

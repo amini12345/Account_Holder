@@ -8,6 +8,42 @@ from django.utils.html import format_html
 from django.urls import reverse
 import json
 from shared.approval_utils import approve_item_assignment
+from extensions.jalali import Persian, Gregorian
+import datetime
+
+
+class PersianDateWidget(forms.DateInput):
+    """ویجت تاریخ فارسی با تقویم"""
+    
+    def format_value(self, value):
+        """تبدیل تاریخ میلادی به شمسی برای نمایش"""
+        if value and isinstance(value, (datetime.date, datetime.datetime)):
+            try:
+                persian_date = Gregorian(value).persian_tuple()
+                return f"{persian_date[0]}/{persian_date[1]:02d}/{persian_date[2]:02d}"
+            except:
+                pass
+        return value
+    
+    def value_from_datadict(self, data, files, name):
+        """تبدیل تاریخ شمسی وارد شده به میلادی برای ذخیره"""
+        value = super().value_from_datadict(data, files, name)
+        if value and '/' in value:
+            try:
+                parts = value.split('/')
+                if len(parts) == 3:
+                    year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+                    gregorian_date = Persian(year, month, day).gregorian_tuple()
+                    return f"{gregorian_date[0]}-{gregorian_date[1]:02d}-{gregorian_date[2]:02d}"
+            except:
+                pass
+        return value
+    
+    class Media:
+        css = {
+            'all': ('css/persian-calendar.css',)
+        }
+        js = ('js/persian-calendar.js',)
 
 #Admin header change
 admin.site.site_header = "پنل مدیریت وب سایت"
@@ -25,11 +61,39 @@ class TransferItemForm(forms.Form):
         help_text="توضیحات مربوط به انتقال کالا"
     )
 
+class PersonalInfoAdminForm(forms.ModelForm):
+    """
+    فرم سفارشی برای مدل PersonalInfo با ویجت تاریخ فارسی
+    """
+    class Meta:
+        model = PersonalInfo
+        fields = '__all__'
+        widgets = {
+            'date_of_birth': PersianDateWidget(attrs={
+                'placeholder': 'مثال: 1370/01/01',
+                'help_text': 'تاریخ تولد را به فرمت شمسی وارد کنید'
+            }),
+        }
+
 class PersonalInfoAdmin(admin.ModelAdmin):
+    form = PersonalInfoAdminForm
     list_display = ('Personnel_number','name', 'family', 'National_ID','Educational_degree','jinfo')
     search_fields = ('family',)
     list_filter = ('date_created',)  
-    ordering = ('-date_created',)   
+    ordering = ('-date_created',)
+    
+    fieldsets = (
+        ('اطلاعات شخصی', {
+            'fields': ('name', 'family', 'Personnel_number', 'National_ID', 'date_of_birth')
+        }),
+        ('اطلاعات تماس', {
+            'fields': ('email', 'phone_number')
+        }),
+        ('اطلاعات تحصیلی و امنیتی', {
+            'fields': ('Educational_degree', 'password')
+        }),
+    )
+    
 admin.site.register(PersonalInfo, PersonalInfoAdmin) 
 
 class ItemHistoryInline(admin.TabularInline):
@@ -261,7 +325,7 @@ class ItemInfoAdmin(admin.ModelAdmin):
     
     transfer_item.short_description = "انتقال کالاهای انتخاب شده به شخص دیگر"
     
-admin.site.register(Items,ItemInfoAdmin)
+# admin.site.register(Items,ItemInfoAdmin)
 
 class ItemHistoryAdmin(admin.ModelAdmin):
     list_display = ('item', 'get_item_status', 'from_person', 'to_person', 'action_type', 'get_change_summary', 'jinfo')
@@ -312,17 +376,17 @@ class ItemHistoryAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
         
-admin.site.register(ItemHistory, ItemHistoryAdmin)
+# admin.site.register(ItemHistory, ItemHistoryAdmin)
 
-admin.site.register(Documents)   
+# admin.site.register(Documents)   
 
 class MissionAdmin(admin.ModelAdmin):
     list_display = ('types_of_missions','Mission_Description','mission_location','jinfo','time_frame',)
     search_fields = ('mission_location',)
 
-admin.site.register(Mission, MissionAdmin)
+# admin.site.register(Mission, MissionAdmin)
 
-admin.site.register(Results)
+# admin.site.register(Results)
 
 class ItemChangeRequestAdmin(admin.ModelAdmin):
     list_display = ('item', 'owner', 'admin_user', 'action_type', 'status', 'jinfo', 'show_changes')

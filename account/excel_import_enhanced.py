@@ -21,7 +21,7 @@ def process_excel_enhanced(request):
     
     # بررسی فرمت فایل
     if not excel_file.name.endswith(('.xlsx', '.xls')):
-        messages.error(request, 'فرمت فایل باید Excel باش�� (.xlsx یا .xls)')
+        messages.error(request, 'فرمت فایل باید Excel باشد (.xlsx یا .xls)')
         return redirect('account:import_excel')
     
     try:

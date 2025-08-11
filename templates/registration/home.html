@@ -6,6 +6,17 @@
 {% endblock %}
 
 {% block main %}
+  <!-- دکمه خروج از حساب -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="d-flex justify-content-end">
+        <a href="{% url 'account:login' %}" class="btn btn-danger">
+          <i class="fas fa-sign-out-alt"></i> خروج از حساب
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- نمایش پیام‌ها -->
   {% if messages %}
     {% for message in messages %}
@@ -211,7 +222,7 @@
                   <label for="status_filter">وضعیت کالا:</label>
                   <select name="status_filter" id="status_filter" class="form-control">
                     <option value="">همه وضعیت‌ها</option>
-                    <option value="hardware" {% if request.GET.status_filter == 'hardware' %}selected{% endif %}>سخت افزار (تعمیری)</option>
+                    <option value="hardware" {% if request.GET.status_filter == 'hardware' %}selected{% endif %}>سخت افزار </option>
                     <option value="Delivery" {% if request.GET.status_filter == 'Delivery' %}selected{% endif %}>تحویل</option>
                     <option value="warehouse" {% if request.GET.status_filter == 'warehouse' %}selected{% endif %}>انبار</option>
                   </select>
@@ -283,9 +294,9 @@
           </style>
           
           <!-- فرم انتقال دسته‌ای -->
-          <div class="p-3 border-bottom bg-light">
-            <form id="bulkTransferForm" method="post" action="{% url 'account:bulk_transfer_items' %}">
-              {% csrf_token %}
+          <form id="bulkTransferForm" method="post" action="{% url 'account:bulk_transfer_items' %}">
+            {% csrf_token %}
+            <div class="p-3 border-bottom bg-light">
               <div class="row">
                 <div class="col-md-6">
                   <div class="form-group mb-2">
@@ -321,136 +332,136 @@
                   <span id="selectedCount" class="ml-3 text-muted">0 کالا انتخاب شده</span>
                 </div>
               </div>
-            </form>
-          </div>
+            </div>
 
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>
-                  <input type="checkbox" id="selectAll" onchange="toggleAllItems()">
-                </th>
-                <th>ردیف</th>
-                <th style="cursor: pointer; user-select: none;" onclick="sortTable('name')" title="کلیک کنید تا مرتب شود">
-                  نام کالا
-                  <i class="fas fa-sort ml-1" id="name-sort-icon"></i>
-                </th>
-                <th>نوع کالا</th>
-                <th>برند</th>
-                <th>پیکربندی</th>
-                <th>وضعیت کالا</th>
-                <th>شماره سریال</th>
-                <th>کد محصول</th>
-                <th>دارنده حساب</th>
-                <th style="cursor: pointer; user-select: none;" onclick="sortTable('date')" title="کلیک کنید تا مرتب شود">
-                  تاریخ ثبت
-                  <i class="fas fa-sort ml-1" id="date-sort-icon"></i>
-                </th>
-                <th>عملیات</th>
-              </tr>
-            </thead>
-            <tbody>
-                {% for item in object_list %}
-                  <tr>
-                      <td>
-                        <input type="checkbox" name="selected_items" value="{{ item.id }}" class="item-checkbox" onchange="updateSelectedCount()">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>
+                    <input type="checkbox" id="selectAll" onchange="toggleAllItems()">
+                  </th>
+                  <th>ردیف</th>
+                  <th style="cursor: pointer; user-select: none;" onclick="sortTable('name')" title="کلیک کنید تا مرتب شود">
+                    نام کالا
+                    <i class="fas fa-sort ml-1" id="name-sort-icon"></i>
+                  </th>
+                  <th>نوع کالا</th>
+                  <th>برند</th>
+                  <th>پیکربندی</th>
+                  <th>وضعیت کالا</th>
+                  <th>شماره سریال</th>
+                  <th>کد محصول</th>
+                  <th>دارنده حساب</th>
+                  <th style="cursor: pointer; user-select: none;" onclick="sortTable('date')" title="کلیک کنید تا مرتب شود">
+                    تاریخ ثبت
+                    <i class="fas fa-sort ml-1" id="date-sort-icon"></i>
+                  </th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                  {% for item in object_list %}
+                    <tr>
+                        <td>
+                          <input type="checkbox" name="selected_items" value="{{ item.id }}" class="item-checkbox" onchange="updateSelectedCount()">
+                        </td>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                          {% if item.Technical_items %}
+                            {{ item.Technical_items }}
+                          {% else %}
+                            <span class="text-muted">تعریف نشده</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.type_Item == 'Technical' %}
+                            <span class="badge badge-primary">فنی</span>
+                          {% elif item.type_Item == 'Non-technical' %}
+                            <span class="badge badge-secondary">غیر فنی</span>
+                          {% else %}
+                            <span class="badge badge-light">نامشخص</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.brand %}
+                            <strong>{{ item.brand }}</strong>
+                          {% else %}
+                            <span class="text-muted">تعریف نشده</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.Configuration %}
+                            <small class="text-info">{{ item.Configuration }}</small>
+                          {% else %}
+                            <span class="text-muted">ندارد</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.status_item == 'hardware' %}
+                            <span class="badge badge-warning">سخت افزار </span>
+                          {% elif item.status_item == 'Delivery' %}
+                            <span class="badge badge-info">تحویل</span>
+                          {% elif item.status_item == 'warehouse' %}
+                            <span class="badge badge-success">انبار</span>
+                          {% else %}
+                            <span class="badge badge-light">{{ item.get_status_item_display|default:"نامشخص" }}</span>
+                          {% endif %}
+                          {% if item.status_sub_item %}
+                            <br><small class="text-muted">{{ item.get_status_sub_item_display }}</small>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.serial_number %}
+                            <code>{{ item.serial_number }}</code>
+                          {% else %}
+                            <span class="text-muted">ندارد</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.Product_code %}
+                            <code>{{ item.Product_code }}</code>
+                          {% else %}
+                            <span class="text-muted">ندارد</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.PersonalInfo %}
+                            <strong>{{ item.PersonalInfo.name }} {{ item.PersonalInfo.family }}</strong>
+                            <br>
+                            <small class="text-muted">{{ item.PersonalInfo.Personnel_number }}</small>
+                          {% else %}
+                            <span class="text-muted">بدون دارنده</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <small>{{ item.jinfo }}</small>
+                        </td>
+                        <td>
+                          <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'account:item_detail' item.pk %}" class="btn btn-info btn-sm" title="مشاهده جزئیات">
+                              <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'account:item_edit' item.pk %}" class="btn btn-warning btn-sm" title="ویرایش">
+                              <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'account:item_delete' item.pk %}" class="btn btn-danger btn-sm" title="حذف" onclick="return confirm('آیا مطمئن هستید؟')">
+                              <i class="fas fa-trash"></i>
+                            </a>
+                          </div>
+                        </td>
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="12" class="text-center text-muted py-4">
+                        <i class="fas fa-box-open fa-2x mb-2"></i>
+                        <br>
+                        هیچ کالایی یافت نشد
                       </td>
-                      <td>{{ forloop.counter }}</td>
-                      <td>
-                        {% if item.Technical_items %}
-                          {{ item.Technical_items }}
-                        {% else %}
-                          <span class="text-muted">تعریف نشده</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.type_Item == 'Technical' %}
-                          <span class="badge badge-primary">فنی</span>
-                        {% elif item.type_Item == 'Non-technical' %}
-                          <span class="badge badge-secondary">غیر فنی</span>
-                        {% else %}
-                          <span class="badge badge-light">نامشخص</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.brand %}
-                          <strong>{{ item.brand }}</strong>
-                        {% else %}
-                          <span class="text-muted">تعریف نشده</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.Configuration %}
-                          <small class="text-info">{{ item.Configuration }}</small>
-                        {% else %}
-                          <span class="text-muted">ندارد</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.status_item == 'hardware' %}
-                          <span class="badge badge-warning">سخت افزار (تعمیری)</span>
-                        {% elif item.status_item == 'Delivery' %}
-                          <span class="badge badge-info">تحویل</span>
-                        {% elif item.status_item == 'warehouse' %}
-                          <span class="badge badge-success">انبار</span>
-                        {% else %}
-                          <span class="badge badge-light">{{ item.get_status_item_display|default:"نامشخص" }}</span>
-                        {% endif %}
-                        {% if item.status_sub_item %}
-                          <br><small class="text-muted">{{ item.get_status_sub_item_display }}</small>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.serial_number %}
-                          <code>{{ item.serial_number }}</code>
-                        {% else %}
-                          <span class="text-muted">ندارد</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.Product_code %}
-                          <code>{{ item.Product_code }}</code>
-                        {% else %}
-                          <span class="text-muted">ندارد</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if item.PersonalInfo %}
-                          <strong>{{ item.PersonalInfo.name }} {{ item.PersonalInfo.family }}</strong>
-                          <br>
-                          <small class="text-muted">{{ item.PersonalInfo.Personnel_number }}</small>
-                        {% else %}
-                          <span class="text-muted">بدون دارنده</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        <small>{{ item.jinfo }}</small>
-                      </td>
-                      <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                          <a href="{% url 'account:item_detail' item.pk %}" class="btn btn-info btn-sm" title="مشاهده جزئیات">
-                            <i class="fas fa-eye"></i>
-                          </a>
-                          <a href="{% url 'account:item_edit' item.pk %}" class="btn btn-warning btn-sm" title="ویرایش">
-                            <i class="fas fa-edit"></i>
-                          </a>
-                          <a href="{% url 'account:item_delete' item.pk %}" class="btn btn-danger btn-sm" title="حذف" onclick="return confirm('آیا مطمئن هستید؟')">
-                            <i class="fas fa-trash"></i>
-                          </a>
-                        </div>
-                      </td>
-                  </tr>
-                {% empty %}
-                  <tr>
-                    <td colspan="12" class="text-center text-muted py-4">
-                      <i class="fas fa-box-open fa-2x mb-2"></i>
-                      <br>
-                      هیچ کالایی یافت نشد
-                    </td>
-                  </tr>
-                {% endfor %}
-            </tbody>
-          </table>
+                    </tr>
+                  {% endfor %}
+              </tbody>
+            </table>
+          </form>
         </div>
         <!-- /.card-body -->
         <div class="card-footer clearfix">
@@ -575,7 +586,7 @@
         ]
       };
       
-      // تابع برای به‌روزرسانی زیر وضعیت‌ها
+      // تابع برای به‌روزرسانی زیر وضعیت���ها
       function updateSubStatuses() {
         const selectedStatus = statusFilter.value;
         
